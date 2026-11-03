@@ -1,0 +1,442 @@
+{
+  "meta": {
+    "purpose": "公开页面连通性探测",
+    "run_at": "2026-11-03T18:59:52.519527+08:00",
+    "timeout_seconds": 15,
+    "disclaimer": "本脚本不登录、不投递、不读取私人消息，仅探测公开页面可访问性。"
+  },
+  "companies": [
+    {
+      "type": "company",
+      "name": "腾讯",
+      "career_home": {
+        "url": "https://careers.tencent.com/",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 55.1,
+        "title": "首页 | 腾讯招聘",
+        "content_length": 7977,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": false,
+          "has_block_keyword": false
+        },
+        "error": null
+      },
+      "job_search": {
+        "url": "https://careers.tencent.com/search.html",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 52.48,
+        "title": "搜索 | 腾讯招聘",
+        "content_length": 2250,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": false,
+          "has_block_keyword": false
+        },
+        "error": null
+      }
+    },
+    {
+      "type": "company",
+      "name": "字节跳动",
+      "career_home": {
+        "url": "https://jobs.bytedance.com/",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 747.24,
+        "title": null,
+        "content_length": 1046038,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": true,
+          "has_block_keyword": false
+        },
+        "error": null
+      },
+      "job_search": {
+        "url": "https://jobs.bytedance.com/experienced/position",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 665.56,
+        "title": null,
+        "content_length": 1023886,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": true,
+          "has_block_keyword": false
+        },
+        "error": null
+      }
+    },
+    {
+      "type": "company",
+      "name": "阿里巴巴",
+      "career_home": {
+        "url": "https://talent.alibaba.com/",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 184.99,
+        "title": "阿里巴巴集团招聘官网",
+        "content_length": 7983,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": true,
+          "has_block_keyword": false
+        },
+        "error": null
+      },
+      "job_search": {
+        "url": "https://talent.alibaba.com/",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 188.64,
+        "title": "阿里巴巴集团招聘官网",
+        "content_length": 8349,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": true,
+          "has_block_keyword": false
+        },
+        "error": null
+      }
+    },
+    {
+      "type": "company",
+      "name": "美团",
+      "career_home": {
+        "url": "https://zhaopin.meituan.com/",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 299.0,
+        "title": "美团招聘",
+        "content_length": 34509,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": false,
+          "has_block_keyword": false
+        },
+        "error": null
+      },
+      "job_search": {
+        "url": "https://zhaopin.meituan.com/job-list",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 295.21,
+        "title": "美团招聘",
+        "content_length": 34509,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": false,
+          "has_block_keyword": false
+        },
+        "error": null
+      }
+    },
+    {
+      "type": "company",
+      "name": "京东",
+      "career_home": {
+        "url": "https://zhaopin.jd.com/",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 492.74,
+        "title": "京东招聘-首页",
+        "content_length": 24296,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": true,
+          "has_block_keyword": false
+        },
+        "error": null
+      },
+      "job_search": {
+        "url": "https://zhaopin.jd.com/jobs.html",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 312.96,
+        "title": "京东-欢迎登录",
+        "content_length": 32687,
+        "indicators": {
+          "has_captcha_keyword": true,
+          "has_login_keyword": true,
+          "has_block_keyword": false
+        },
+        "error": null
+      }
+    },
+    {
+      "type": "company",
+      "name": "百度",
+      "career_home": {
+        "url": "https://talent.baidu.com/",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 1447.87,
+        "title": "百度校园招聘",
+        "content_length": 49255,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": true,
+          "has_block_keyword": false
+        },
+        "error": null
+      },
+      "job_search": {
+        "url": "https://talent.baidu.com/jobs/social/list",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 412.12,
+        "title": "百度校园招聘",
+        "content_length": 6177,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": true,
+          "has_block_keyword": false
+        },
+        "error": null
+      }
+    },
+    {
+      "type": "company",
+      "name": "网易",
+      "career_home": {
+        "url": "https://hr.163.com/",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 157.16,
+        "title": "ç½æç¤¾ä¼æè",
+        "content_length": 6083,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": true,
+          "has_block_keyword": false
+        },
+        "error": null
+      },
+      "job_search": {
+        "url": "https://hr.163.com/job-list.html",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 137.71,
+        "title": "ç½æç¤¾ä¼æè",
+        "content_length": 6086,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": true,
+          "has_block_keyword": false
+        },
+        "error": null
+      }
+    },
+    {
+      "type": "company",
+      "name": "小米",
+      "career_home": {
+        "url": "https://hr.xiaomi.com/",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 243.65,
+        "title": null,
+        "content_length": 607,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": false,
+          "has_block_keyword": false
+        },
+        "error": null
+      },
+      "job_search": {
+        "url": "https://hr.xiaomi.com/job",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 441.11,
+        "title": "探索机会 | 小米招聘",
+        "content_length": 19832,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": false,
+          "has_block_keyword": false
+        },
+        "error": null
+      }
+    },
+    {
+      "type": "company",
+      "name": "金蝶",
+      "career_home": {
+        "url": "https://www.kingdee.com/global/careers/",
+        "ok": false,
+        "status_code": 403,
+        "elapsed_ms": 1007.08,
+        "title": "Just a moment...",
+        "content_length": 6531,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": false,
+          "has_block_keyword": false
+        },
+        "error": null
+      },
+      "job_search": {
+        "url": "https://www.kingdee.com/global/careers/",
+        "ok": false,
+        "status_code": 403,
+        "elapsed_ms": 1198.48,
+        "title": "Just a moment...",
+        "content_length": 6531,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": false,
+          "has_block_keyword": false
+        },
+        "error": null
+      }
+    },
+    {
+      "type": "company",
+      "name": "用友",
+      "career_home": {
+        "url": "https://career.yonyou.com/",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 163.54,
+        "title": "",
+        "content_length": 3912,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": false,
+          "has_block_keyword": false
+        },
+        "error": null
+      },
+      "job_search": {
+        "url": "https://career.yonyou.com/",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 144.23,
+        "title": "",
+        "content_length": 3912,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": false,
+          "has_block_keyword": false
+        },
+        "error": null
+      }
+    }
+  ],
+  "platforms": [
+    {
+      "type": "platform",
+      "name": "BOSS 直聘",
+      "home": {
+        "url": "https://www.zhipin.com/",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 260.55,
+        "title": "BOSS直聘-找工作BOSS直聘直接谈！招聘求职找工作！",
+        "content_length": 537691,
+        "indicators": {
+          "has_captcha_keyword": true,
+          "has_login_keyword": true,
+          "has_block_keyword": false
+        },
+        "error": null
+      },
+      "job_search_samples": [
+        {
+          "url": "https://www.zhipin.com/web/geek/job?query=%E4%BA%A7%E5%93%81%E7%BB%8F%E7%90%86&city=101010100",
+          "ok": true,
+          "status_code": 200,
+          "elapsed_ms": 166.28,
+          "title": "BOSS直聘",
+          "content_length": 9613,
+          "indicators": {
+            "has_captcha_keyword": false,
+            "has_login_keyword": true,
+            "has_block_keyword": false
+          },
+          "error": null,
+          "query": {
+            "keyword": "产品经理",
+            "city": 101010100
+          }
+        },
+        {
+          "url": "https://www.zhipin.com/web/geek/job?query=%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91&city=101020100",
+          "ok": true,
+          "status_code": 200,
+          "elapsed_ms": 150.67,
+          "title": "BOSS直聘",
+          "content_length": 9613,
+          "indicators": {
+            "has_captcha_keyword": false,
+            "has_login_keyword": true,
+            "has_block_keyword": false
+          },
+          "error": null,
+          "query": {
+            "keyword": "后端开发",
+            "city": 101020100
+          }
+        }
+      ]
+    },
+    {
+      "type": "platform",
+      "name": "猎聘",
+      "home": {
+        "url": "https://www.liepin.com/",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 241.63,
+        "title": "【猎聘】-招聘_找工作_求职_企业招人平台",
+        "content_length": 371975,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": true,
+          "has_block_keyword": false
+        },
+        "error": null
+      },
+      "job_search_samples": [
+        {
+          "url": "https://www.liepin.com/zhaopin/?key=%E4%BA%A7%E5%93%81%E7%BB%8F%E7%90%86",
+          "ok": true,
+          "status_code": 200,
+          "elapsed_ms": 188.44,
+          "title": "【招聘信息_人才网招聘信息】-猎聘",
+          "content_length": 35508,
+          "indicators": {
+            "has_captcha_keyword": false,
+            "has_login_keyword": true,
+            "has_block_keyword": false
+          },
+          "error": null,
+          "query": {
+            "keyword": "产品经理"
+          }
+        },
+        {
+          "url": "https://www.liepin.com/zhaopin/?key=%E5%90%8E%E7%AB%AF%E5%BC%80%E5%8F%91",
+          "ok": true,
+          "status_code": 200,
+          "elapsed_ms": 185.33,
+          "title": "【招聘信息_人才网招聘信息】-猎聘",
+          "content_length": 35512,
+          "indicators": {
+            "has_captcha_keyword": false,
+            "has_login_keyword": true,
+            "has_block_keyword": false
+          },
+          "error": null,
+          "query": {
+            "keyword": "后端开发"
+          }
+        }
+      ]
+    }
+  ]
+}

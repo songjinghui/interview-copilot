@@ -1,0 +1,26 @@
+{
+  "meta": {
+    "purpose": "本地转写环境基础探测",
+    "run_at": "2026-11-03T19:01:01.755013+08:00",
+    "disclaimer": "本脚本不下载模型、不处理真实音频，仅检查环境依赖。"
+  },
+  "environment": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python_version": "3.13.14 (main, Jun 11 2026, 04:04:46) [MSC v.1944 64 bit (AMD64)]",
+    "python_executable": "C:\\Users\\Administrator\\.workbuddy-ai\\binaries\\python\\versions\\3.13.12\\python.exe"
+  },
+  "optional_dependencies": {
+    "openai-whisper": false,
+    "faster-whisper": false,
+    "torch": false,
+    "sounddevice": false,
+    "pyaudio": false,
+    "ffmpeg_in_path": false
+  },
+  "audio_input_devices": {
+    "available": false,
+    "library": null,
+    "devices": [],
+    "error": "未安装 sounddevice 或 pyaudio，无法枚举音频设备"
+  }
+}

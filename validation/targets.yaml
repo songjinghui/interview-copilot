@@ -1,0 +1,165 @@
+# 求职助手验证目标配置
+# 本文件仅用于初始连通性与公开页面可解析性验证，不包含登录凭据，也不执行真实投递。
+# 用户已指定首批验证阿里、腾讯、美团；其余条目保留为未验证候选。
+
+meta:
+  purpose: 验证找岗、代投与反馈回收的代表性路径
+  created: "2026-11-03"
+  note: >-
+    首批验证样本已确认为阿里巴巴、腾讯、美团。
+    其余企业是原有候选，尚未确认入口和能力；关键词及反馈渠道也仅作候选，不代表用户实际求职方向或已验证接入。
+
+companies:
+  # 互联网 / 科技
+  - name: 腾讯
+    career_home: https://careers.tencent.com/
+    job_search: https://careers.tencent.com/search.html
+    keywords: ["产品经理", "后端开发", "算法工程师"]
+    application_portal: https://careers.tencent.com/
+    feedback_channels: [官网申请状态, 邮件, 电话]
+
+  - name: 字节跳动
+    career_home: https://jobs.bytedance.com/
+    job_search: https://jobs.bytedance.com/experienced/position
+    keywords: ["产品经理", "后端开发", "算法工程师"]
+    application_portal: https://jobs.bytedance.com/
+    feedback_channels: [官网申请状态, 邮件, 电话]
+
+  - name: 阿里巴巴
+    career_home: https://talent.alibaba.com/
+    # talent.alibaba.com 是各业务板块招聘入口的汇总页，实际职位列表分布在淘天、阿里云等子站点。
+    # 这里用首页同时作为 job_search 占位，真实接入时需按业务板块分别探测。
+    job_search: https://talent.alibaba.com/
+    keywords: ["产品经理", "Java开发", "算法工程师"]
+    application_portal: https://talent.alibaba.com/
+    feedback_channels: [官网申请状态, 邮件, 电话]
+    notes: 集团招聘首页可达，但具体职位搜索需进入各业务板块子站点。
+
+  - name: 美团
+    career_home: https://zhaopin.meituan.com/
+    job_search: https://zhaopin.meituan.com/web/social
+    keywords: ["产品经理", "后端开发", "算法工程师"]
+    application_portal: https://zhaopin.meituan.com/
+    feedback_channels: [官网申请状态, 邮件, 电话]
+
+  - name: 京东
+    career_home: https://zhaopin.jd.com/
+    job_search: https://zhaopin.jd.com/jobs.html
+    keywords: ["产品经理", "后端开发", "算法工程师"]
+    application_portal: https://zhaopin.jd.com/
+    feedback_channels: [官网申请状态, 邮件, 电话]
+
+  - name: 百度
+    career_home: https://talent.baidu.com/
+    job_search: https://talent.baidu.com/jobs/social/list
+    keywords: ["产品经理", "后端开发", "算法工程师"]
+    application_portal: https://talent.baidu.com/
+    feedback_channels: [官网申请状态, 邮件, 电话]
+
+  - name: 网易
+    career_home: https://hr.163.com/
+    job_search: https://hr.163.com/job-list.html
+    keywords: ["产品经理", "后端开发", "算法工程师"]
+    application_portal: https://hr.163.com/
+    feedback_channels: [官网申请状态, 邮件, 电话]
+
+  - name: 小米
+    career_home: https://hr.xiaomi.com/
+    job_search: https://hr.xiaomi.com/job
+    keywords: ["产品经理", "后端开发", "算法工程师"]
+    application_portal: https://hr.xiaomi.com/
+    feedback_channels: [官网申请状态, 邮件, 电话]
+
+  # 软件 / 企业服务等偏传统行业
+  - name: 金蝶
+    career_home: https://www.kingdee.com/global/careers/
+    job_search: https://www.kingdee.com/global/careers/
+    keywords: ["产品经理", "后端开发"]
+    application_portal: https://www.kingdee.com/global/careers/
+    feedback_channels: [官网申请状态, 邮件, 电话]
+
+  - name: 用友
+    career_home: https://career.yonyou.com/
+    job_search: https://career.yonyou.com/
+    keywords: ["产品经理", "后端开发"]
+    application_portal: https://career.yonyou.com/
+    feedback_channels: [官网申请状态, 邮件, 电话]
+
+platforms:
+  boss:
+    name: BOSS 直聘
+    home: https://www.zhipin.com/
+    job_search: https://www.zhipin.com/web/geek/job
+    sample_queries:
+      - keyword: 产品经理
+        city: 101010100  # 北京城市编码，仅作示例
+      - keyword: 后端开发
+        city: 101020100  # 上海城市编码
+    application_mode: 网页端聊天/投递或 APP 端沟通
+    feedback_channels: [BOSS 站内消息, 微信, 电话, 短信]
+    notes: >-
+      公开搜索页可见，但完整 JD、聊天、投递与个人消息需要登录。
+      反爬与账号风控较强，自动化需单独验证。
+
+  liepin:
+    name: 猎聘
+    home: https://www.liepin.com/
+    job_search: https://www.liepin.com/zhaopin/
+    sample_queries:
+      - keyword: 产品经理
+      - keyword: 后端开发
+    application_mode: 网页端投递/沟通或 APP 端
+    feedback_channels: [猎聘站内信, 微信, 电话, 邮件, 短信]
+    notes: >-
+      公开搜索页可见，部分 JD 需要登录查看完整内容。
+      猎头沟通、投递记录与个人消息需要登录授权。
+
+feedback_channels:
+  - id: 官网申请状态
+    name: 企业招聘官网申请状态页
+    needs_auth: true
+    automation_difficulty: 中
+    reliability: 高
+    note: 需要登录对应企业招聘账号，通常有申请记录、状态变更。
+
+  - id: 邮件
+    name: 电子邮箱
+    needs_auth: true
+    automation_difficulty: 中
+    reliability: 高
+    note: offer、面试邀请、拒信常见渠道，可通过授权邮箱同步或用户导入。
+
+  - id: 短信
+    name: 手机短信
+    needs_auth: true
+    automation_difficulty: 高
+    reliability: 中
+    note: 多平台、多设备，自动同步难度大，通常由用户手动补记或截图导入。
+
+  - id: 电话
+    name: 电话沟通
+    needs_auth: false
+    automation_difficulty: 高
+    reliability: 低
+    note: 无法自动读取，需用户手动记录通话要点。
+
+  - id: 微信
+    name: 微信/企业微信
+    needs_auth: true
+    automation_difficulty: 高
+    reliability: 中
+    note: 私人通讯，自动读取涉及隐私与合规，建议用户导入或补记。
+
+  - id: BOSS 站内消息
+    name: BOSS 直聘站内消息
+    needs_auth: true
+    automation_difficulty: 高
+    reliability: 高
+    note: 投递与沟通的核心反馈入口，需登录授权且受平台风控限制。
+
+  - id: 猎聘站内信
+    name: 猎聘站内信
+    needs_auth: true
+    automation_difficulty: 高
+    reliability: 高
+    note: 投递与猎头沟通的核心反馈入口，需登录授权。

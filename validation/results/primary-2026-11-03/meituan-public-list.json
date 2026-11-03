@@ -1,0 +1,113 @@
+{
+  "observed_at": "2026-11-03T11:20:40.351278+00:00",
+  "request": {
+    "url": "https://zhaopin.meituan.com/api/official/job/getJobList",
+    "method": "POST",
+    "purpose": "read one public job only",
+    "body": {
+      "page": {
+        "pageNo": 1,
+        "pageSize": 1
+      },
+      "jobShareType": "1",
+      "keywords": "",
+      "cityList": [],
+      "department": [],
+      "jfJgList": [],
+      "jobType": [],
+      "typeCode": []
+    },
+    "authenticated": false
+  },
+  "response": {
+    "status_code": 200,
+    "final_url": "https://zhaopin.meituan.com/api/official/job/getJobList",
+    "body_sha256": "b2e2b479c5244fcc94f31855946d3fcf9e793d77ce503d57afad59ff472b9d36",
+    "content_type": "application/json",
+    "body": {
+      "data": {
+        "list": [
+          {
+            "jobUnionId": "4697320043",
+            "name": "AI全栈工程师",
+            "projectId": null,
+            "projectName": null,
+            "jobType": "1",
+            "jobSpecialCode": "1",
+            "jobSource": "2",
+            "jobStatus": "000",
+            "jobFamily": "技术类",
+            "jobFamilyGroup": "软件",
+            "cityList": [
+              {
+                "code": null,
+                "name": "北京市",
+                "children": null,
+                "sort": null,
+                "subCode": null,
+                "mapping": null,
+                "outerCode": null,
+                "bgNode": false
+              },
+              {
+                "code": null,
+                "name": "上海市",
+                "children": null,
+                "sort": null,
+                "subCode": null,
+                "mapping": null,
+                "outerCode": null,
+                "bgNode": false
+              },
+              {
+                "code": null,
+                "name": "成都市",
+                "children": null,
+                "sort": null,
+                "subCode": null,
+                "mapping": null,
+                "outerCode": null,
+                "bgNode": false
+              },
+              {
+                "code": null,
+                "name": "深圳市",
+                "children": null,
+                "sort": null,
+                "subCode": null,
+                "mapping": null,
+                "outerCode": null,
+                "bgNode": false
+              }
+            ],
+            "workYear": null,
+            "department": [],
+            "desc": "",
+            "departmentIntro": null,
+            "jobDuty": "岗位职责\n1. 参与 AI 应用的全栈开发：负责 AI 产品功能的前端界面（Web/小程序）与后端服务的设计与实现，保障高可用与用户体验；\n2. 大模型能力工程化：参与LLM 应用架构设计与开发，包括 Prompt 模板工程、RAG检索管线搭建、Agent 工作流编排等；\n3. 模型效果调优与评估：参与模型输出的质量评估，分析 Bad Case，优化提示词策略与检索链路，提升 AI 回答的准确率与可用性；\n4. AI 工程基础设施建设：参与模型服务化部署、推理性能优化、流式响应设计，构建高效稳定的 AI 应用底座；\n5. 技术探索与落地：跟踪前沿AI 技术动态，参与从 0 到 1 的 AI 功能创新验证。",
+            "jobRequirement": "岗位要求\n1. 本科及以上学历，计算机科学、软件工程或相关专业；\n2. 扎实的编程基础：熟练掌握至少一门编程语言（Python / Java / TypeScript / Go 等），具备良好的代码习惯；\n3. 基本功扎实：了解前端框架（React / Vue 等）或后端框架（Spring / Django / Express 等）之一，具备完整 Web 项目开发经验；\n4. AI 素养与好奇心：熟悉大模型基本原理与应用范式，有 ChatGPT / Claude 等工具的深度使用经验，理解 Prompt Engineering 基本技巧；\n5. 学习与解决问题能力：对新技术保持敏感，能快速学习并应用 AI 领域新知识，具备良好的逻辑思维与沟通协作能力。\n6. 有独立完成AI应用（Bot/Agent/自动化工作流）从0到1上线的经历者优先",
+            "precedence": null,
+            "highLight": "",
+            "otherInfo": null,
+            "firstPostTime": null,
+            "refreshTime": 1786960999000,
+            "tag": [
+              1
+            ],
+            "expiredTime": null,
+            "socialRecommendJob": null
+          }
+        ],
+        "page": {
+          "pageNo": 1,
+          "pageSize": 1,
+          "totalPage": 3322,
+          "totalCount": 3322
+        },
+        "traceId": null
+      },
+      "status": 1,
+      "message": "成功"
+    }
+  }
+}

@@ -1,0 +1,179 @@
+{
+  "meta": {
+    "purpose": "公开页面连通性探测",
+    "run_at": "2026-11-03T19:13:33.023850+08:00",
+    "timeout_seconds": 15,
+    "disclaimer": "本脚本不登录、不投递、不读取私人消息，仅探测公开页面可访问性。",
+    "method": "GET only; no browser rendering, no authentication, no form submission",
+    "selected_companies": [
+      "腾讯",
+      "阿里巴巴",
+      "美团"
+    ]
+  },
+  "companies": [
+    {
+      "type": "company",
+      "name": "腾讯",
+      "career_home": {
+        "url": "https://careers.tencent.com/",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 186.96,
+        "title": "首页 | 腾讯招聘",
+        "content_length": 7977,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": false,
+          "has_block_keyword": false
+        },
+        "page_state": "html_shell",
+        "final_url": "https://careers.tencent.com/",
+        "body_sha256": "ebf89d7e97795d14ab857865261ef2ca3b486174b62e29c7281be25e382993dd",
+        "job_content_status": "not_verified",
+        "application_status": "not_tested",
+        "feedback_status": "not_tested",
+        "error": null,
+        "content_type": "text/html; charset=utf-8",
+        "script_count": 15,
+        "public_links": [],
+        "visible_text_chars": 0,
+        "text_excerpt": ""
+      },
+      "job_search": {
+        "url": "https://careers.tencent.com/search.html",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 188.84,
+        "title": "搜索 | 腾讯招聘",
+        "content_length": 2250,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": false,
+          "has_block_keyword": false
+        },
+        "page_state": "html_shell",
+        "final_url": "https://careers.tencent.com/search.html",
+        "body_sha256": "731ce582957edc11b934e98421fe80b3995fafc08c8dc1f9a18c832d2ff580a5",
+        "job_content_status": "not_verified",
+        "application_status": "not_tested",
+        "feedback_status": "not_tested",
+        "error": null,
+        "content_type": "text/html; charset=utf-8",
+        "script_count": 13,
+        "public_links": [],
+        "visible_text_chars": 0,
+        "text_excerpt": ""
+      }
+    },
+    {
+      "type": "company",
+      "name": "阿里巴巴",
+      "career_home": {
+        "url": "https://talent.alibaba.com/",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 273.23,
+        "title": "阿里巴巴集团招聘官网",
+        "content_length": 7983,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": false,
+          "has_block_keyword": false
+        },
+        "page_state": "html_shell",
+        "final_url": "https://talent.alibaba.com/",
+        "body_sha256": "0cdd2a23be42574fcdf73bf02204757b009939eb6f2528ab880417ebdbb70094",
+        "job_content_status": "not_verified",
+        "application_status": "not_tested",
+        "feedback_status": "not_tested",
+        "error": null,
+        "content_type": "text/html;charset=UTF-8",
+        "script_count": 17,
+        "public_links": [],
+        "visible_text_chars": 0,
+        "text_excerpt": ""
+      },
+      "job_search": {
+        "url": "https://talent.alibaba.com/",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 280.27,
+        "title": "阿里巴巴集团招聘官网",
+        "content_length": 7983,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": false,
+          "has_block_keyword": false
+        },
+        "page_state": "html_shell",
+        "final_url": "https://talent.alibaba.com/",
+        "body_sha256": "69394bede8aae9c0ffda3d03f272a48cfe26c77e5933a93158dcfee8eb94086d",
+        "job_content_status": "not_verified",
+        "application_status": "not_tested",
+        "feedback_status": "not_tested",
+        "error": null,
+        "content_type": "text/html;charset=UTF-8",
+        "script_count": 17,
+        "public_links": [],
+        "visible_text_chars": 0,
+        "text_excerpt": ""
+      }
+    },
+    {
+      "type": "company",
+      "name": "美团",
+      "career_home": {
+        "url": "https://zhaopin.meituan.com/",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 488.36,
+        "title": "美团招聘",
+        "content_length": 34509,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": false,
+          "has_block_keyword": false
+        },
+        "page_state": "html_shell",
+        "final_url": "https://zhaopin.meituan.com/web/home",
+        "body_sha256": "93b44a8ba8b20ba6eee9c37a82b8fa0bd17bdc98bd4df839c682f52734613966",
+        "job_content_status": "not_verified",
+        "application_status": "not_tested",
+        "feedback_status": "not_tested",
+        "error": null,
+        "content_type": "text/html; charset=utf-8",
+        "script_count": 16,
+        "public_links": [],
+        "visible_text_chars": 0,
+        "text_excerpt": ""
+      },
+      "job_search": {
+        "url": "https://zhaopin.meituan.com/web/social",
+        "ok": true,
+        "status_code": 200,
+        "elapsed_ms": 435.4,
+        "title": "美团招聘",
+        "content_length": 34509,
+        "indicators": {
+          "has_captcha_keyword": false,
+          "has_login_keyword": false,
+          "has_block_keyword": false
+        },
+        "page_state": "html_shell",
+        "final_url": "https://zhaopin.meituan.com/web/social",
+        "body_sha256": "93b44a8ba8b20ba6eee9c37a82b8fa0bd17bdc98bd4df839c682f52734613966",
+        "job_content_status": "not_verified",
+        "application_status": "not_tested",
+        "feedback_status": "not_tested",
+        "error": null,
+        "content_type": "text/html; charset=utf-8",
+        "script_count": 16,
+        "public_links": [],
+        "visible_text_chars": 0,
+        "text_excerpt": ""
+      }
+    }
+  ],
+  "platforms": []
+}

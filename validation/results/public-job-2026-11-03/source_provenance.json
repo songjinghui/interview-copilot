@@ -1,0 +1,46 @@
+{
+  "recorded_at": "2026-11-03T11:24:38.084519+00:00",
+  "scope": "Assets read directly without authentication; body hashes refer to this run, not future versions. No claim of a supported public API contract.",
+  "sources": [
+    {
+      "url": "https://zhaopin.meituan.com/web/social",
+      "source_kind": "official_public_frontend_asset",
+      "observed_http_status": 200,
+      "sha256": "93b44a8ba8b20ba6eee9c37a82b8fa0bd17bdc98bd4df839c682f52734613966",
+      "byte_length": 34509,
+      "evidence_used_for": "HTML contains the entry script URL"
+    },
+    {
+      "url": "https://s3.meituan.net/static-prod01/com.sankuai.recruitment.official.website/entry-main-9361c032.js",
+      "source_kind": "official_public_frontend_asset",
+      "observed_http_status": 200,
+      "sha256": "1caceaf905d5bc3a3141192b449d6f1d9d5c4fe00e75672a4f2ddbcdfe26da39",
+      "byte_length": 6965,
+      "evidence_used_for": "Entry supplies public path and bundle identifiers"
+    },
+    {
+      "url": "https://s3.meituan.net/static-prod01/com.sankuai.recruitment.official.website/bundle-app_src_bootstrap_tsx-47c28d03.js",
+      "source_kind": "official_public_frontend_asset",
+      "observed_http_status": 200,
+      "sha256": "49f84d07ee18fe84533893d45a56b27bdf1b8ec0ee1dcf0e816bfc802ae81e7e",
+      "byte_length": 1459697,
+      "evidence_used_for": "Defines POST reads for getJobList and getJobDetail"
+    },
+    {
+      "url": "https://s3.meituan.net/static-prod01/com.sankuai.recruitment.official.website/bundle-app_src_elements_FilterPositionList_index_tsx-e1430102.js",
+      "source_kind": "official_public_frontend_asset",
+      "observed_http_status": 200,
+      "sha256": "1dcc0cb8af7e591236ecf0b5ede448747766a8a932078b3a57a7b62469801384",
+      "byte_length": 13418,
+      "evidence_used_for": "Defines pagination and public filter fields"
+    },
+    {
+      "url": "https://s3.meituan.net/static-prod01/com.sankuai.recruitment.official.website/bundle-app_src_nodes_position_detail_index_tsx-9a58a2ed.js",
+      "source_kind": "official_public_frontend_asset",
+      "observed_http_status": 200,
+      "sha256": "dfbaff39d2d6fad891a21c124319433060f4298a2ec56b2a9b5a545f4987fcd6",
+      "byte_length": 41194,
+      "evidence_used_for": "Calls detail reader with jobUnionId and jobShareType"
+    }
+  ]
+}
