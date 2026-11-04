@@ -48,16 +48,6 @@ class Capability:
 
 
 @dataclass(frozen=True)
-class SourceCapabilities:
-    """一个来源分项声明四类能力：搜索、详情、投递、反馈。"""
-
-    search: Capability
-    detail: Capability
-    apply: Capability
-    feedback: Capability
-
-
-@dataclass(frozen=True)
 class JobRecord:
     """一条来源岗位记录。
 

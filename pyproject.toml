@@ -17,3 +17,4 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 interview_copilot = ["py.typed"]
+"interview_copilot.storage" = ["migrations/*.sql"]
