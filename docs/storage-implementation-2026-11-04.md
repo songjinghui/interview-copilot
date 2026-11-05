@@ -50,7 +50,7 @@ python -m interview_copilot migrate-legacy --source C:\isolated-test\legacy.sqli
 
 开发中发现过测试 fixture 的 SQLite context manager 未关闭连接，导致 Windows 临时目录清理报文件占用；已修正 fixture 显式 close。该环境清理问题不计入产品缺陷红测。
 
-本分支代码格式化后实际执行结果：
+首次提交 `dae96d5` 的代码格式化后实际执行结果（保留初次验证事实；修订后结果见下节）：
 
 | 检查 | 结果 | 边界 |
 |---|---|---|
@@ -68,3 +68,18 @@ python -m interview_copilot migrate-legacy --source C:\isolated-test\legacy.sqli
 本段没有页面工作台、HTTP 传输、真实来源调用、录音/ASR worker、反馈同步或复盘生成。浏览器渲染、焦点、缩放与点击，系统唤醒、录音硬件及外部平台验收保持待验，未重试此前被策略拒绝的浏览器命令。37 表建库不表示这些后续功能已经实现。
 
 交缅因猫审查本分支的事务边界、历史保真、输入验证和迁移拒绝覆盖行为，通过后再进入下一段与合并流程。
+
+## 2026-11-05 · S1/S2 审查修订
+
+依据砚砚写入 main 的[审查报告](https://github.com/songjinghui/interview-copilot/blob/911cb8b/docs/storage-review-2026-11-04.md)，首次提交仍为 changes_requested。本节是作者修订证据，不代替复审 verdict。
+
+- **S1：历史准备快照漂移。** `RecordApplication` 在准备关联未变时读取该申请当前 revision 的事件快照。结果、时间、回执纠正不再采样可变准备。显式更换 preparation_id 才校验并固定新准备，显式 null 解除关联；后续纠正沿用最近一次明确选择，旧事件完全保留。
+- **S2：解除关联后旧准备仍可确认。** 删除关联与相关未使用准备清确认、revision+1 在同一事务。旧窗口收到修订冲突；重新读取返回 `relink_job`，确认入口再次检查关联。恢复关联后按原有一/两步重新确认，deferred 不被自动恢复。其他岗位的准备不受影响。
+- **历史纠正路径。** 已发生申请及其事件不随解除当前关联而删除或变化。保留原 JD 修订可以继续纠正结果，改选另一个 JD 或新建申请仍需当前关联。已使用准备的保存状态保留，但当前查询动作同样受 relink_job 限制。
+- **接口与页面设计同步。** application-contracts、database-design 和 frontend-design 已说明历史快照选择、解绑事务、relink_job 和重新确认行为；没有更改 SQL 或增加投递审批步骤。
+
+新增 [test_application_review.py](../tests/test_application_review.py) 的 10 个用例。先在旧实现运行，确认历史快照漂移、重新关联跳过确认、旧 revision 未失效、重新读取后仍可确认等目标断言失败；历史纠正在解除关联后被错误拒绝也单独复现。另有跨机会拒绝、其他岗位不受影响及事务回滚等防退化用例，旧实现原本通过，不冒称这些用例先红。然后修改实现，10/10 通过。
+
+格式化后完整回归：`python -X utf8 -m unittest discover -s tests -t . -v` **79/79**；`python -X utf8 -m unittest discover -s validation/tests -p 'test_*.py' -v` **17/17**；合计 **96 项 Python 测试通过**。`git diff --check` 通过。数据库仍为内存/隔离临时目录。SQL、原型源码和打包配置未变，本轮没有重跑此前通过的设计检查或 wheel 实验，也未把其结果当作本轮独立重验。
+
+修订后交精确新 HEAD 复审；未合并 PR，未进入第 2 段。

@@ -554,10 +554,27 @@ class ApplicationService:
         row = self._expected("opportunities", p["opportunity_id"], expected)
         self._row("jobs", p["job_id"])
         self._basis(p.get("basis"))
-        self.connection.execute(
+        removed = self.connection.execute(
             "DELETE FROM opportunity_jobs WHERE opportunity_id=? AND job_id=?",
             (row["id"], p["job_id"]),
         )
+        if removed.rowcount:
+            # Invalidate the user's previous confirmations in the same transaction
+            # as the association change. Used preparations remain historical input;
+            # their availability for future actions is checked separately.
+            self.connection.execute(
+                """UPDATE application_preparations
+                   SET material_confirmed_at=NULL, cooldown_confirmed_at=NULL,
+                       status=CASE WHEN status='deferred' THEN 'deferred' ELSE 'draft' END,
+                       revision=revision+1, updated_at=?
+                   WHERE opportunity_id=?
+                     AND job_version_id IN (SELECT id FROM job_versions WHERE job_id=?)
+                     AND NOT EXISTS (
+                         SELECT 1 FROM applications a
+                         WHERE a.preparation_id=application_preparations.id
+                     )""",
+                (utc_now(), row["id"], p["job_id"]),
+            )
         self._update("opportunities", row["id"], expected, note=row["note"])
         return self.get_opportunity(row["id"])
 
@@ -655,12 +672,20 @@ class ApplicationService:
         )
         return self._row("cooldown_notes", identifier)
 
+    def _has_job_link(self, version_id, opportunity_id):
+        return (
+            self.connection.execute(
+                """SELECT 1 FROM opportunity_jobs link
+               JOIN job_versions version ON version.job_id=link.job_id
+               WHERE link.opportunity_id=? AND version.id=?""",
+                (opportunity_id, version_id),
+            ).fetchone()
+            is not None
+        )
+
     def _job_for_opportunity(self, version_id, opportunity_id):
         version = self._row("job_versions", version_id)
-        if not self.connection.execute(
-            "SELECT 1 FROM opportunity_jobs WHERE opportunity_id=? AND job_id=?",
-            (opportunity_id, version["job_id"]),
-        ).fetchone():
+        if not self._has_job_link(version_id, opportunity_id):
             raise ApplicationError(
                 "VALIDATION", "Job is not linked to this opportunity"
             )
@@ -719,6 +744,7 @@ class ApplicationService:
 
     def _confirm(self, p, expected):
         row = self._expected("application_preparations", p["preparation_id"], expected)
+        self._job_for_opportunity(row["job_version_id"], row["opportunity_id"])
         step = choice(p.get("step"), {"materials", "cooldown"}, "step")
         current = self.get_preparation(row["id"])
         if row["status"] != "draft" or current["next_step"] != step:
@@ -759,11 +785,34 @@ class ApplicationService:
         old = self._expected("applications", p["id"], expected) if p.get("id") else None
         if old and old["opportunity_id"] != opportunity["id"]:
             raise ApplicationError("VALIDATION", "Cannot move an application")
-        self._job_for_opportunity(p["job_version_id"], opportunity["id"])
+        # A removed current association does not erase a historical fact. Keep
+        # correcting that exact JD version, but require a link for a new choice.
+        if old is None or p["job_version_id"] != old["job_version_id"]:
+            self._job_for_opportunity(p["job_version_id"], opportunity["id"])
         if p.get("resume_version_id"):
             self._row("material_versions", p["resume_version_id"])
         preparation_id = p.get("preparation_id", old["preparation_id"] if old else None)
-        preparation = self.get_preparation(preparation_id) if preparation_id else None
+        if old and preparation_id == old["preparation_id"]:
+            event = self.connection.execute(
+                "SELECT snapshot_json FROM application_events WHERE application_id=? AND revision=?",
+                (old["id"], old["revision"]),
+            ).fetchone()
+            if event is None:
+                raise ApplicationError(
+                    "STORAGE_ERROR",
+                    "Application history is incomplete; cannot correct this record",
+                )
+            # The latest event carries the snapshot selected by the last explicit
+            # association correction. Never resample the mutable preparation here.
+            preparation = json.loads(event["snapshot_json"])["preparation"]
+        else:
+            preparation = (
+                self.get_preparation(preparation_id) if preparation_id else None
+            )
+            if preparation:
+                self._job_for_opportunity(
+                    preparation["job_version_id"], opportunity["id"]
+                )
         if preparation and preparation["opportunity_id"] != opportunity["id"]:
             raise ApplicationError(
                 "VALIDATION", "Preparation belongs to another opportunity"
@@ -859,7 +908,9 @@ class ApplicationService:
     def get_preparation(self, identifier):
         row = self._row("application_preparations", identifier)
         row["cooldown_snapshot"] = json.loads(row.pop("cooldown_snapshot_json"))
-        if row["status"] == "deferred":
+        if not self._has_job_link(row["job_version_id"], row["opportunity_id"]):
+            step = "relink_job"
+        elif row["status"] == "deferred":
             step = "deferred"
         elif row["material_confirmed_at"] is None:
             step = "materials"

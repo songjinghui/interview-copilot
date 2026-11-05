@@ -46,7 +46,7 @@ POST /api/v1/commands
 | `/jobs/:id` | `current_observation,current_version,last_complete_version,versions,opportunities`；当前与历史完整内容明确分开 |
 | `/opportunities` | `status?,query?,cursor?`；状态、最新事件、下一场面试 |
 | `/opportunities/:id` | 聚合 jobs/preparations/applications/feedback/interviews，cooldown 为 latest notes 的可解释判断，附 revision |
-| `/preparations/:id` | `job,resume,resume_exception,channel,cooldown_snapshot,status,revision,next_step:materials/cooldown/manual_apply/deferred` |
+| `/preparations/:id` | `job,resume,resume_exception,channel,cooldown_snapshot,status,revision,next_step:materials/cooldown/manual_apply/deferred/relink_job`；岗位已解除关联时返回 relink_job，不可确认或直接投递 |
 | `/interviews` | `from?,to?,status?,cursor?`；有时间和时间未知分组 |
 | `/interviews/:id` | `schedule,current_context,contexts,audio_assets,current_transcript,transcript_versions,reports,improvements`；大正文独立读 |
 | `/transcripts/:version_id` | `interview_id,revision,origin,audio_asset_id,segments:[key,ordinal,speaker,text,audio_asset_id,source_version_id,source_segment_key,start_ms,end_ms]` |
@@ -76,10 +76,10 @@ POST /api/v1/commands
 | RefreshJob | `job_id` → task | 仅可用 read_job，保留旧详情；不改变历史应用材料 |
 | SaveOpportunity | `job_id?,title?,company_name?` → opportunity | 同岗位已关联给现有机会；直接补录允许无 job，后补 JD |
 | UpdateOpportunity | `id,status?,note?,title?` → opportunity | 合法状态、revision；保存用户明确结果 |
-| LinkJob / UnlinkJob | `opportunity_id,job_id,basis` → opportunity | 用户确认，已有版本引用仍保留；关联修订+1 |
+| LinkJob / UnlinkJob | `opportunity_id,job_id,basis` → opportunity | 用户确认，已有版本引用仍保留；关联修订+1；解除时同事务清除相关未使用准备的确认并增加其 revision |
 | RecordCooldown | `opportunity_id,scope,status,explanation,evidence,known_until?,supersedes_id?` → note | absent 需要依据；同机会 revision 检查；追加 note，更新未使用准备的确认快照/清确认 |
 | SavePreparation | `id?,opportunity_id,job_version_id,resume_version_id?,resume_exception?,channel,apply_url?` → preparation | job 属于该机会；缺 resume 需明确无需材料的说明；冷却期快照服务生成；改变输入重置确认 |
-| ConfirmPreparation | `preparation_id,step:materials/cooldown` → preparation | 按状态仅执行当前步骤；present 两步，其余一步；不创建申请 |
+| ConfirmPreparation | `preparation_id,step:materials/cooldown` → preparation | 校验岗位仍关联本机会及当前 revision/步骤；present 两步，其余一步；不创建申请 |
 | DeferPreparation | `preparation_id` → preparation | deferred，保留选材；继续须核对当前 revision |
 | RecordApplication | `id?,opportunity_id,preparation_id?,job_version_id,resume_version_id?,channel,outcome,submitted_at?,evidence,reason?` → application | 历史补录不追确认；当前事实+event+回执；outcome=submitted 必须时间/依据 |
 | ImportFeedback | `text,asset_id?,occurred_at?,opportunity_id?` → feedback | manual 来源 UUID；截图不假定已OCR成功，允许文字补充 |
@@ -123,6 +123,10 @@ POST /api/v1/commands
 ```
 
 实际 present/absent 必须有依据；示例为虚构的用户补录，用于说明结构。第二步成功返回 ready/manual_apply，不返回 submitted。外部链接由浏览器用户点击，后台没有自动填表/提交/发消息端口。
+
+解除岗位关联后，相关未使用准备清除两个确认时间并回 draft（主动 deferred 保持暂缓），revision 增加；旧窗口确认返回 `REVISION_CONFLICT`，重新读取显示 `next_step=relink_job`。已使用准备保留当时状态，但查询同样返回 relink_job，不能仅凭保存的 ready 状态显示投递入口。恢复关联后，未使用准备须重新按原有一/两步确认，不增加新的投递审批。
+
+修正 `RecordApplication` 时必须提供 reason。`preparation_id` 省略或与原 ID 相同，沿用该申请上一事件的准备快照，不重读后来修改的准备。显式换为另一个 ID 时验证同机会且岗位仍关联，然后固定新快照；显式 null 取消准备关联。纠正后续结果仍沿用最近一次明确选择的快照。当前岗位关联解除后，已有申请可继续使用原 `job_version_id` 纠正结果/时间/依据；新建申请或改选 JD 仍需当前关联。历史事件不被改写。
 
 ## 4. 文件传输与录音边界
 
