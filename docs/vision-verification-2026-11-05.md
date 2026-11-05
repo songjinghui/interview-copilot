@@ -18,11 +18,11 @@
 
 1. 仓库状态：工作区干净，`main...origin/main` 同步，HEAD = a444d86。
 2. PR #1 状态：GitHub API 确认 MERGED，merge commit 与转交所述一致（0f7b679…），base = main。
-3. 合并后增量：`git diff 0f7b679..a444d86` 仅动了 VISION 与 7 个 docs 文件（进度同步/验收记录），**没有任何产品代码改动**，与"产品代码未变"的说法一致。
+3. 合并后增量：`git diff --name-only 0f7b679 a444d86` 实测共 **7 个文件**（VISION.md + 6 个 docs 文件，进度同步/验收记录），**没有任何产品代码改动**，与"产品代码未变"的说法一致。（更正：初版误记为"VISION 与 7 个 docs 文件"，多计 1，2026-11-05 校正。）
 4. 测试：当前 main 上重跑 `tests/` → **79/79 OK**（本人独立执行），`validation/tests` → **17/17 OK**（本人独立执行）。合计 96 通过，与验收记录所述 79+17=96 一致。
 5. 代码扫描：`src/` 的实际文件集（application.py、jobs/model+store、sources/base+registry、storage/database+legacy+001_initial.sql）与"仓储、来源协议/注册、应用服务"的交付描述一致；grep 全 `src/` 无 "练手"、"代投"、"自动投递"、"auto-submit" 概念。
 6. `application.py` 的确认/申请路径：outcome 由用户补记、要求 submitted 带时间与依据（evidence），**没有任何自动提交路径**——纯手动流程。
-7. 能力建模：JobRecord/Capability/SourceCapabilities 与三态（verified/unverified/unsupported）、必填 basis、verified 必须带 evidence_ref——来自本人的初版 spike，合并版保持不变，与愿景的能力声明要求一致。
+7. 能力建模：`Capability` 三态（verified/unverified/unsupported）、必填 basis、verified 必带 evidence_ref 保留，与愿景的能力声明要求一致。（更正 2026-11-05：初版写"SourceCapabilities……合并版保持不变"有误——合并版中旧 `SourceCapabilities` 四能力模型已移除，现行实现为 `sources/base.py` 的 SearchJobs / ReadJob / ReadFeedback 三个独立协议，`sources/registry.py` 的 `PORTS = {search_jobs, read_job, read_feedback}` 仅此三端口。）
 
 ## 与 v0.12 用户决定的逐条对照
 
@@ -31,7 +31,7 @@
 | 首版手动投递（自动投递移出） | RecordApplication 只记录用户补记的 outcome+evidence；无任何提交路径 | ✅ 一致 |
 | 冷却期：有则二次确认，无/待核实仅提示一次 | ConfirmPreparation 的 step 为 materials/cooldown；present 才走第二步，其余一步到 ready_for_manual_apply；待核实不强制第二次确认 | ✅ 一致 |
 | 不设练手/重点、无跨岗推演 | 代码与命令清单中无练手/重点概念；无次数规则引擎 | ✅ 一致 |
-| 来源按独立能力增加 | SourceCapabilities 分项四能力；registry 独立注册 | ✅ 一致 |
+| 来源按独立能力增加 | 来源能力经 registry 独立注册，端口分项为 search_jobs / read_job / read_feedback；Capability 三态与 evidence 依据保留 | ✅ 一致 |
 | 后台转写 + 四项输入复盘在后续段 | `src/` 中无 ASR/复盘代码；命令清单中属于后段 | ✅ 范围未溢出 |
 | 信息输入是系统能力、本地数据 | SQLite 主库 + 迁移、幂等历史版本 | ✅ 一致 |
 
