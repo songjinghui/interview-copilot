@@ -56,7 +56,7 @@ class JobRecord:
 
     source_key: str
     source_job_id: str
-    source_url: str
+    source_url: str | None
     title: str
     fetched_at: str
     fetch_method: str
@@ -72,10 +72,15 @@ class JobRecord:
     source_refreshed_at: str | None = None
 
     def __post_init__(self) -> None:
-        for name in ("source_key", "source_job_id", "source_url", "title"):
+        for name in ("source_key", "source_job_id", "title"):
             value = getattr(self, name)
             if not isinstance(value, str) or not value.strip():
                 raise ValueError(f"{name} 不能为空")
+        if self.source_url is None:
+            if self.source_key != "manual" or self.fetch_method != "manual":
+                raise ValueError("只有手工记录可以没有原始网址")
+        elif not isinstance(self.source_url, str) or not self.source_url.strip():
+            raise ValueError("source_url 不能为空字符串")
         if not isinstance(self.locations, tuple):
             raise ValueError("locations 必须是 tuple，避免可变默认值被共享")
 
