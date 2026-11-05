@@ -20,6 +20,7 @@ interface FormProps {
   initial?: Values;
   expected?: number;
   onSaved: (data: Record<string, unknown>) => void;
+  onConflict?: () => void;
   submitLabel?: string;
 }
 export function ActionForm({
@@ -32,6 +33,7 @@ export function ActionForm({
   initial = {},
   expected,
   onSaved,
+  onConflict,
   submitLabel = "保存",
 }: FormProps) {
   const [draft, setDraft] = useState<Draft>({ values: initial, expected });
@@ -115,8 +117,25 @@ export function ActionForm({
         failure.code &&
         !["SESSION_REQUIRED", "BUSY", "STORAGE_ERROR"].includes(failure.code)
       ) {
-        await persist({ ...pending, envelope: undefined }).catch(() => {});
-        setError(failure);
+        if (failure.code === "REVISION_CONFLICT" && fields.length === 0) {
+          try {
+            await drafts.remove(id);
+            setDraft({ values: initial, expected });
+            setError({
+              ...failure,
+              message:
+                "记录已更新，正在读取最新记录；请核对当前内容后重新确认。",
+            });
+            onConflict?.();
+          } catch {
+            setError({
+              message: "确认已被拒绝，但本地请求未能清理；请刷新记录后再继续。",
+            });
+          }
+        } else {
+          await persist({ ...pending, envelope: undefined }).catch(() => {});
+          setError(failure);
+        }
       } else {
         setError({
           message: failure.code
@@ -213,7 +232,7 @@ export function ActionForm({
                 : error.message}
             </p>
           )}
-          {error?.code === "REVISION_CONFLICT" &&
+          {fields.length > 0 && error?.code === "REVISION_CONFLICT" &&
             (error.details?.revision || error.details?.parent_version_id) && (
               <button
                 type="button"

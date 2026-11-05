@@ -7,6 +7,11 @@ export const split = (value = "") =>
     .split(/[,，\n]/)
     .map((x) => x.trim())
     .filter(Boolean);
+const splitLines = (value = "") =>
+  value
+    .split(/\r?\n/)
+    .map((x) => x.trim())
+    .filter(Boolean);
 const targetFields: Field[] = [
   { name: "label", label: "目标名称", required: true },
   {
@@ -43,13 +48,13 @@ const targetInput = (v: Values) => {
       cities,
       any_city: v.cityMode === "any",
       conditions: [
-        ...split(v.must).map((value) => ({
+        ...splitLines(v.must).map((value) => ({
           field: "description",
           operator: "contains",
           value,
           importance: "must",
         })),
-        ...split(v.prefer).map((value) => ({
+        ...splitLines(v.prefer).map((value) => ({
           field: "description",
           operator: "contains",
           value,
@@ -218,6 +223,7 @@ export function ProfilePage({
                     expected={fact.revision}
                     input={() => ({ id: fact.id })}
                     onSaved={refresh}
+                    onConflict={refresh}
                     submitLabel="确认事实"
                   />
                 )}

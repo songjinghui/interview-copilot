@@ -70,6 +70,7 @@ export function Preparation({
             step === "cooldown" ? "确认了解冷却期，仍自行投递" : "确认材料"
           }
           onSaved={refresh}
+          onConflict={refresh}
         />
       )}
       {["materials", "cooldown", "manual_apply"].includes(step) && (
@@ -83,6 +84,7 @@ export function Preparation({
           input={() => ({ preparation_id: prep.id })}
           submitLabel="暂缓"
           onSaved={refresh}
+          onConflict={refresh}
         />
       )}
     </section>

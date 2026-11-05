@@ -308,6 +308,7 @@ function OpportunityDetail({
                 },
               })}
               onSaved={refresh}
+              onConflict={refresh}
               submitLabel="解除关联（未使用的准备需重新确认）"
             />
           </details>
