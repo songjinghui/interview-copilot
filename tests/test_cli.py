@@ -65,6 +65,12 @@ class MaintenanceCliTest(unittest.TestCase):
         self.assertNotIn("Traceback", result.stderr)
         self.assertFalse((self.directory / "bundle").exists())
 
+    def test_open_requires_running_service_and_reports_actionable_local_error(self):
+        result = self.run_cli("open", "--data-dir", self.directory / "not-started")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(json.loads(result.stderr)["error"], "LOCAL_SERVICE_FAILED")
+        self.assertNotIn("Traceback", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

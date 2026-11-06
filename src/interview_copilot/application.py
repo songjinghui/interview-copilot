@@ -439,7 +439,9 @@ class ApplicationService:
         ).fetchone()
         if latest is None or latest[0] != p.get("parent_version_id"):
             raise ApplicationError(
-                "REVISION_CONFLICT", "Resume was revised; reload before editing"
+                "REVISION_CONFLICT",
+                "Resume was revised; reload before editing",
+                details={"parent_version_id": latest[0] if latest else None},
             )
         identifiers = p.get("fact_ids", [])
         if not isinstance(identifiers, list) or len(set(identifiers)) != len(

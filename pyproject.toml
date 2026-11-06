@@ -7,14 +7,15 @@ name = "interview-copilot"
 version = "0.1.0.dev0"
 description = "求职助手：把岗位信息输入与求职过程管理做成系统功能"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = ["fastapi>=0.141.1,<0.142", "uvicorn>=0.52.4,<0.53"]
 
 [project.optional-dependencies]
 validation = ["requests>=2.31", "beautifulsoup4>=4.12", "PyYAML>=6.0"]
+test = ["httpx>=0.28.1,<0.29"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-interview_copilot = ["py.typed"]
+interview_copilot = ["py.typed", "web/*", "web/assets/*"]
 "interview_copilot.storage" = ["migrations/*.sql"]

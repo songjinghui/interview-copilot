@@ -107,7 +107,11 @@ class SqliteJobStore:
                 if complete
                 else (
                     "partial"
-                    if (record.responsibilities or record.requirements)
+                    if (
+                        record.responsibilities
+                        or record.requirements
+                        or record.fetch_method == "manual"
+                    )
                     else "summary"
                 )
             )
