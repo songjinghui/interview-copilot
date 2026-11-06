@@ -1,5 +1,7 @@
 # 第 3 段服务层切片独立审查
 
+> 最新复审：`790da15fa25394c42d47f6b7c58d28cba2140cb8` 仍为 **changes_requested**；A1–A3 已关闭，剩余 A4-R1 文件身份竞态。详见文末复审段，以下初审事实保留。
+
 日期：2026-11-06  
 审查者：砚砚 / gpt-6-astra（非作者）  
 结论：**changes_requested**。A1–A4 修复并复审前，不放行本切片合并。
@@ -91,6 +93,62 @@ python -X utf8 docs/review-probes/phase3-service-2026-11-06.py C:/Users/Administ
 ## 下一棒
 
 交作者先针对 A1–A4 建立失败回归，再修订实现，运行完整相关测试。请将修订提交到可追溯分支并回传精确 HEAD；本报告只绑定上述未提交快照，不能当作将来提交的放行。审查通过后再走合并与隔离验收。
+
+[砚砚/gpt-6-astra🐾]
+
+## 2026-11-06 复审 · 790da15
+
+**结论：changes_requested。** 绑定精确提交 `790da15fa25394c42d47f6b7c58d28cba2140cb8`（`fix/phase3-service-review`）。本地 HEAD 与远端分支一致，作者工作区干净。没有该分支的 PR；本节记录代码复审，不提交 GitHub 原生 PR verdict。
+
+A1、A2、A3 关闭；A4 的长事务阻塞已修复，但该修订的文件身份校验存在下述 A4-R1，仍需修复后再放行。前文保留初审事实，不表示旧问题仍全部存在。
+
+### 已核对的修订
+
+- **A1：**机会查询与领域服务的 9 个真实状态一致；原 HTTP 探针全部返回 200。
+- **A2：**未知名称在有时区数据时返回 VALIDATION，缺数据返回 TIMEZONE_DATA_UNAVAILABLE（HTTP 映射 503）；不再静默创建日程。
+- **A3：**UTC instant 与显示时区分开，查询时间原样回传、仅修改 label 的探针通过。
+- **A4 原阻塞：**execute 在写事务之前调用 prepare_command，音频哈希/解码已移出 BEGIN IMMEDIATE；事务内再次检查回执。现有库初始化改为只读 schema 验证，只有新库初始化需要写事务；已处于 WAL 的库不再重复切换。原慢 I/O 期间 profile 查询通过，作者新增并发写入回归也通过。
+- **回执：**成功导入后删除合成测试文件，同 request_id 仍返回原回执；在 preflight 已返回后再修改文件会被拒绝，未写入音频记录。两项由本轮独立探针验证。
+- 初始 SQL 迁移未改，现有迁移与仓储回归仍通过。
+
+### A4-R1 · P2 · 校验结束后才记录文件身份，可能发布未经校验的替换内容
+
+位置：[workbench.py:284–292](https://github.com/songjinghui/interview-copilot/blob/790da15fa25394c42d47f6b7c58d28cba2140cb8/src/interview_copilot/workbench.py#L284)，最终对比在 311–321 行。
+
+`prepare_command` 先调用 `_audio_file` 完成哈希/解码并关闭文件，然后才用 `path.stat()` 取得 file_identity。这一身份可能已经属于校验后被改写或替换的内容。事务里比较“当前 stat”与“校验结束后的 stat”，两者相同不能证明该内容通过了先前校验。
+
+独立复现只使用临时目录的合成 WAV：
+1. 实际执行原 `_audio_file`，哈希与 WAV 解码成功；
+2. 在返回到 `prepare_command` 的 stat 之前，用普通文件写入将整个 WAV 覆盖为同长度的 `x` 字节；不伪造时间戳，也不修改数据库 hash；
+3. 继续原流程，导入成功，没有抛 ApplicationError。坏内容被关联为 finalized/complete 音频，并创建转写任务；
+4. 新增“应拒绝该变化”断言失败。对照用例在 preflight **已经返回后**修改文件则正常拒绝，定位到身份采样与已验证文件不绑定这一具体窗口。
+
+**修订要求：**从实际被校验的打开文件句柄取得身份，在读取/哈希/解码前后验证稳定性，将该身份与校验结果一起返回；最终发布复核同一已验证身份。文件发布/共享策略应阻止或检测校验期间及发布前的普通替换和改写。不能仅把现在的最后一次 path.stat 当作已验证身份，也不要把整段文件 I/O 放回写事务。
+
+先保留本失败用例，再修复；至少覆盖校验过程中变化、校验结束到事务开始之间变化、事务前资产字段变化，以及慢 I/O 下并发读写和回执重放。
+
+### 本轮独立执行结果
+
+| 检查 | 结果 |
+|---|---|
+| 完整 tests | 116/116 通过 |
+| validation/tests | 17/17 通过 |
+| 原 A1–A4 探针 | 4/4 通过；仅给夹具提供明确的测试时区 resolver，原断言未改 |
+| 新增音频身份/回执探针 | 2/3 通过，A4-R1 因目标行为失败 |
+| git diff --check、作者工作区及远端 HEAD | 通过 / 干净 / 均为 790da15 |
+| 001_initial.sql 相对基线差异 | 无 |
+
+共 133 项既有测试通过，另 7 项独立复审探针为 6 绿 1 红。不能将此表述为“全部测试通过”或本轮已放行。
+
+新增复现入口：[phase3-recheck-790da15.py](review-probes/phase3-recheck-790da15.py)：
+
+```powershell
+python -X utf8 docs/review-probes/phase3-recheck-790da15.py C:/Users/Administrator/.local/share/opencode/worktree/fda5e9/phase3-interviews
+```
+
+该脚本复用原审查断言，追加竞态与回执探针；只访问临时数据，不修改作者代码。时区使用注入的测试 resolver，本机实际时区库仍缺失；未声称真实日程运行、录音、ASR、提醒送达、浏览器或系统唤醒已验收。
+
+下一棒：作者修复 A4-R1，提供新精确 HEAD 复审。此节不授予合并放行。
 
 [砚砚/gpt-6-astra🐾]
 
