@@ -4,15 +4,17 @@ import { ProfilePage, split } from "./profile";
 import { useQuery } from "./query";
 import { safeLink } from "./api";
 import { OpportunityPage } from "./workflow";
+import { Dashboard } from "./Dashboard";
 import type { ApiPort, Job, Page, Opportunity } from "./types";
 const names: Record<string, string> = {
+  dashboard: "总览",
   profile: "目标与资料",
   jobs: "岗位",
-  opportunities: "机会",
+  opportunities: "投递机会",
 };
 function route() {
   const params = new URLSearchParams(location.search);
-  return { page: params.get("page") ?? "profile", id: params.get("id") ?? "" };
+  return { page: params.get("page") ?? "dashboard", id: params.get("id") ?? "" };
 }
 export function App({ api }: { api: ApiPort }) {
   const [locationState, setLocation] = useState(route),
@@ -35,7 +37,7 @@ export function App({ api }: { api: ApiPort }) {
   useEffect(() => {
     heading.current?.focus();
   }, [locationState.page, locationState.id]);
-  const page = names[locationState.page] ? locationState.page : "profile";
+  const page = names[locationState.page] ? locationState.page : "dashboard";
   return (
     <div className="shell">
       <a className="skip" href="#main">
@@ -44,10 +46,12 @@ export function App({ api }: { api: ApiPort }) {
       <aside className="navigation">
         <div className="brand">
           <span className="brand-mark" aria-hidden="true">
-            求
+            +
           </span>
-          <strong>求职助手</strong>
-          <small>把下一步，理清楚</small>
+          <div className="brand-copy">
+            <strong>求职工作台</strong>
+            <small>JOB SEARCH WORKSPACE</small>
+          </div>
         </div>
         <nav aria-label="工作台">
           {Object.entries(names).map(([key, label]) => (
@@ -65,41 +69,56 @@ export function App({ api }: { api: ApiPort }) {
           ))}
         </nav>
         <p className="local-note">
-          本机保存
-          <br />
-          手动投递，自己掌握进度
+          <span className="local-note-mark" aria-hidden="true">
+            我
+          </span>
+          <span>
+            <strong>本机工作空间</strong>
+            <small>资料仅保存在你的设备</small>
+          </span>
         </p>
       </aside>
       <main id="main">
-        <header className="page-header">
-          <div>
-            <p className="eyebrow">我的求职工作台</p>
-            <h1 ref={heading} tabIndex={-1}>
-              {names[page]}
-            </h1>
-          </div>
-          <button className="secondary" onClick={refresh}>
-            刷新记录
-          </button>
-        </header>
-        {page === "profile" ? (
-          <ProfilePage api={api} revision={revision} refresh={refresh} />
-        ) : page === "jobs" ? (
-          <JobsPage
+        {page === "dashboard" ? (
+          <Dashboard
             api={api}
             revision={revision}
-            refresh={refresh}
-            selected={locationState.id}
             navigate={navigate}
+            headingRef={heading}
           />
         ) : (
-          <OpportunityPage
-            api={api}
-            revision={revision}
-            refresh={refresh}
-            selected={locationState.id}
-            navigate={navigate}
-          />
+          <>
+            <header className="page-header">
+              <div>
+                <p className="eyebrow">工作空间</p>
+                <h1 ref={heading} tabIndex={-1}>
+                  {names[page]}
+                </h1>
+              </div>
+              <button className="secondary" onClick={refresh}>
+                刷新记录
+              </button>
+            </header>
+            {page === "profile" ? (
+              <ProfilePage api={api} revision={revision} refresh={refresh} />
+            ) : page === "jobs" ? (
+              <JobsPage
+                api={api}
+                revision={revision}
+                refresh={refresh}
+                selected={locationState.id}
+                navigate={navigate}
+              />
+            ) : (
+              <OpportunityPage
+                api={api}
+                revision={revision}
+                refresh={refresh}
+                selected={locationState.id}
+                navigate={navigate}
+              />
+            )}
+          </>
         )}
       </main>
     </div>
