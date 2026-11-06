@@ -289,6 +289,69 @@ class AudioImportTest(unittest.TestCase):
                 table,
             )
 
+    def test_file_replaced_after_preflight_is_rejected(self):
+        asset_id, path, payload = self.add_asset()
+        original_prepare = self.service.prepare_command
+
+        def replace_after_preflight(command, fields):
+            prepared = original_prepare(command, fields)
+            path.write_bytes(b"x" * len(payload))
+            return prepared
+
+        with patch.object(self.service, "prepare_command", side_effect=replace_after_preflight):
+            with self.assertRaises(ApplicationError):
+                self.command(
+                    "AttachAudioImport", interview_id=self.interview_id, asset_id=asset_id
+                )
+        self.assertEqual(
+            self.db.connection.execute("SELECT count(*) FROM audio_assets").fetchone()[0], 0
+        )
+
+    def test_asset_metadata_change_after_preflight_is_rejected(self):
+        mutations = (
+            ("status", "missing"),
+            ("relative_path", "audio/renamed.wav"),
+            ("byte_size", 1),
+            ("sha256", "0" * 64),
+            ("media_type", "audio/mpeg"),
+        )
+        for column, changed_value in mutations:
+            with self.subTest(column=column):
+                asset_id, _path, _payload = self.add_asset()
+                original_value = self.db.connection.execute(
+                    f"SELECT {column} FROM file_assets WHERE id=?", (asset_id,)
+                ).fetchone()[0]
+                original_prepare = self.service.prepare_command
+                mutation = {"column": column, "value": changed_value}
+
+                def change_asset_after_preflight(command, fields):
+                    prepared = original_prepare(command, fields)
+                    self.db.connection.execute(
+                        f"UPDATE file_assets SET {mutation['column']}=? WHERE id=?",
+                        (mutation["value"], asset_id),
+                    )
+                    return prepared
+
+                with patch.object(
+                    self.service, "prepare_command", side_effect=change_asset_after_preflight
+                ):
+                    with self.assertRaises(ApplicationError):
+                        self.command(
+                            "AttachAudioImport",
+                            interview_id=self.interview_id,
+                            asset_id=asset_id,
+                        )
+                self.assertEqual(
+                    self.db.connection.execute(
+                        "SELECT count(*) FROM audio_assets"
+                    ).fetchone()[0],
+                    0,
+                )
+                self.db.connection.execute(
+                    f"UPDATE file_assets SET {column}=? WHERE id=?",
+                    (original_value, asset_id),
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

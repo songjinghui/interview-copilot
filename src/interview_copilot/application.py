@@ -137,6 +137,7 @@ class ApplicationService:
                     )
                 return json.loads(prior["response_json"])
             prepared = self.prepare_command(command, payload)
+            self.verify_prepared_command(command, payload, prepared)
             with self.database.transaction():
                 prior = self.connection.execute(
                     "SELECT * FROM command_receipts WHERE request_id=?", (request_id,)
@@ -184,6 +185,10 @@ class ApplicationService:
 
     def prepare_command(self, command, payload):
         """Perform slow, side-effect-free command validation before the write lock."""
+        return None
+
+    def verify_prepared_command(self, command, payload, prepared):
+        """Recheck external identities immediately before acquiring the write lock."""
         return None
 
     def _insert(self, table, **fields):

@@ -235,6 +235,60 @@ class Phase3ServiceReviewRegressionTest(unittest.TestCase):
                 self.interview()
         self.assertEqual(caught.exception.code, "TIMEZONE_DATA_UNAVAILABLE")
 
+    def test_audio_replacement_during_validation_is_detected_from_open_handle(self):
+        interview = self.interview()
+        asset_id, path, payload = self._registered_audio_asset()
+        import interview_copilot.workbench as workbench
+
+        real_wave_open = workbench.wave.open
+
+        def mutate_after_wav_header(stream, *args, **kwargs):
+            opened = real_wave_open(stream, *args, **kwargs)
+            # Mutate after the importer has parsed the header, but before it
+            # finishes reading/decoding the actual PCM frames.
+            original_readframes = opened.readframes
+
+            def mutate_then_read(frames):
+                path.write_bytes(b"x" * len(payload))
+                opened.readframes = original_readframes
+                return original_readframes(frames)
+
+            opened.readframes = mutate_then_read
+            return opened
+
+        with patch.object(workbench.wave, "open", side_effect=mutate_after_wav_header):
+            with self.assertRaises(ApplicationError):
+                self.service.execute(
+                    str(uuid.uuid4()),
+                    "AttachAudioImport",
+                    {"interview_id": interview["id"], "asset_id": asset_id},
+                )
+        self.assertEqual(
+            self.db.connection.execute("SELECT count(*) FROM audio_assets").fetchone()[0], 0
+        )
+
+    def _registered_audio_asset(self):
+        asset_id = str(uuid.uuid4())
+        relative = f"audio/{asset_id}.wav"
+        path = self.root / "assets" / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        buffer = io.BytesIO()
+        with wave.open(buffer, "wb") as writer:
+            writer.setnchannels(1)
+            writer.setsampwidth(2)
+            writer.setframerate(16000)
+            writer.writeframes(b"\0\0" * 1600)
+        payload = buffer.getvalue()
+        path.write_bytes(payload)
+        self.service._insert(
+            "file_assets", id=asset_id, kind="audio", status="ready",
+            relative_path=relative, original_name="synthetic.wav",
+            media_type="audio/wav", byte_size=len(payload),
+            sha256=hashlib.sha256(payload).hexdigest(), intent_json="{}",
+            created_at=utc_now(), finalized_at=utc_now(),
+        )
+        return asset_id, path, payload
+
 
 if __name__ == "__main__":
     unittest.main()

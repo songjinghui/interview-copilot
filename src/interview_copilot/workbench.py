@@ -5,7 +5,9 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import os
 import re
+import stat as stat_module
 import wave
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -219,27 +221,15 @@ class WorkbenchService(ApplicationService):
     def _audio_file(self, asset):
         if asset["kind"] != "audio" or asset["status"] != "ready":
             raise ApplicationError("VALIDATION", "Audio asset is not ready")
-        relative = Path(asset["relative_path"])
-        if relative.is_absolute() or ".." in relative.parts or "\\" in asset["relative_path"]:
-            raise ApplicationError("VALIDATION", "Audio asset path is not a safe relative path")
-        root = (Path(self.database.path).parent / "assets").resolve()
-        lexical_path = root / relative
-        cursor = root
-        for part in relative.parts:
-            cursor = cursor / part
-            if cursor.is_symlink() or getattr(cursor, "is_junction", lambda: False)():
-                raise ApplicationError("VALIDATION", "Audio asset path cannot use a link")
-        candidate = lexical_path.resolve()
+        candidate = self._audio_path(asset)
         try:
-            candidate.relative_to(root)
-        except ValueError:
-            raise ApplicationError("VALIDATION", "Audio asset path escapes the asset store") from None
-        try:
-            if not candidate.is_file():
-                raise OSError()
-            content_hash = hashlib.sha256()
-            size = 0
             with candidate.open("rb") as stream:
+                before = os.fstat(stream.fileno())
+                if not stat_module.S_ISREG(before.st_mode):
+                    raise OSError()
+                before_identity = self._file_identity(before)
+                content_hash = hashlib.sha256()
+                size = 0
                 for block in iter(lambda: stream.read(1024 * 1024), b""):
                     size += len(block)
                     content_hash.update(block)
@@ -265,15 +255,41 @@ class WorkbenchService(ApplicationService):
                             raise OSError()
                         remaining -= chunk_frames
                     duration_ms = frames * 1000 // sample_rate
+                after = os.fstat(stream.fileno())
+                after_identity = self._file_identity(after)
+                path_identity = self._path_identity(candidate.stat())
+                if before_identity != after_identity or after_identity[:4] != path_identity:
+                    raise OSError()
             if duration_ms < 1:
                 raise OSError()
-            return candidate, duration_ms
+            return candidate, duration_ms, after_identity
         except ApplicationError:
             raise
         except (OSError, EOFError, wave.Error, ValueError):
             raise ApplicationError(
                 "VALIDATION", "Audio asset is missing, damaged, or not decodable"
             ) from None
+
+    @staticmethod
+    def _file_identity(file_stat):
+        return (
+            file_stat.st_dev,
+            file_stat.st_ino,
+            file_stat.st_size,
+            file_stat.st_mtime_ns,
+            file_stat.st_ctime_ns,
+        )
+
+    @staticmethod
+    def _path_identity(file_stat):
+        # Windows may report ctime differently for path stat and fstat; compare
+        # stable pathname identity fields while retaining handle ctime checks.
+        return (
+            file_stat.st_dev,
+            file_stat.st_ino,
+            file_stat.st_size,
+            file_stat.st_mtime_ns,
+        )
 
     def prepare_command(self, command, payload):
         if command != "AttachAudioImport":
@@ -282,16 +298,61 @@ class WorkbenchService(ApplicationService):
         # BEGIN IMMEDIATE transaction. The handler rechecks asset identity and
         # state under the write lock before creating any durable rows.
         asset = self._row("file_assets", payload["asset_id"])
-        path, duration_ms = self._audio_file(asset)
-        stat = path.stat()
+        path, duration_ms, file_identity = self._audio_file(asset)
         return {
             "asset_id": asset["id"],
             "sha256": asset["sha256"],
             "relative_path": asset["relative_path"],
             "byte_size": asset["byte_size"],
-            "file_identity": (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns),
+            "media_type": asset["media_type"],
+            "file_identity": file_identity,
             "duration_ms": duration_ms,
         }
+
+    def verify_prepared_command(self, command, payload, prepared):
+        if command != "AttachAudioImport":
+            return
+        asset = self._row("file_assets", payload["asset_id"])
+        if (
+            prepared["asset_id"] != asset["id"]
+            or prepared["sha256"] != asset["sha256"]
+            or prepared["relative_path"] != asset["relative_path"]
+            or prepared["byte_size"] != asset["byte_size"]
+            or prepared["media_type"] != asset["media_type"]
+            or asset["status"] != "ready"
+        ):
+            raise ApplicationError(
+                "INVALID_STATE", "Audio asset changed during validation; retry the import"
+            )
+        path = self._audio_path(asset)
+        try:
+            current = self._path_identity(path.stat())
+        except OSError:
+            raise ApplicationError(
+                "INVALID_STATE", "Audio file changed during validation; retry the import"
+            ) from None
+        if current != prepared["file_identity"][:4]:
+            raise ApplicationError(
+                "INVALID_STATE", "Audio file changed during validation; retry the import"
+            )
+
+    def _audio_path(self, asset):
+        relative = Path(asset["relative_path"])
+        if relative.is_absolute() or ".." in relative.parts or "\\" in asset["relative_path"]:
+            raise ApplicationError("VALIDATION", "Audio asset path is not a safe relative path")
+        root = (Path(self.database.path).parent / "assets").resolve()
+        lexical_path = root / relative
+        cursor = root
+        for part in relative.parts:
+            cursor = cursor / part
+            if cursor.is_symlink() or getattr(cursor, "is_junction", lambda: False)():
+                raise ApplicationError("VALIDATION", "Audio asset path cannot use a link")
+        candidate = lexical_path.resolve()
+        try:
+            candidate.relative_to(root)
+        except ValueError:
+            raise ApplicationError("VALIDATION", "Audio asset path escapes the asset store") from None
+        return candidate
 
     def _attach_audio_import(self, p, expected, prepared):
         if expected is not None:
@@ -303,22 +364,11 @@ class WorkbenchService(ApplicationService):
             or prepared["sha256"] != asset["sha256"]
             or prepared["relative_path"] != asset["relative_path"]
             or prepared["byte_size"] != asset["byte_size"]
+            or prepared["media_type"] != asset["media_type"]
             or asset["status"] != "ready"
         ):
             raise ApplicationError(
                 "INVALID_STATE", "Audio asset changed during validation; retry the import"
-            )
-        validated_path = (Path(self.database.path).parent / "assets" / asset["relative_path"]).resolve()
-        try:
-            validated_path.relative_to((Path(self.database.path).parent / "assets").resolve())
-            current = validated_path.stat()
-        except (OSError, ValueError):
-            raise ApplicationError(
-                "INVALID_STATE", "Audio file changed during validation; retry the import"
-            ) from None
-        if (current.st_dev, current.st_ino, current.st_size, current.st_mtime_ns) != prepared["file_identity"]:
-            raise ApplicationError(
-                "INVALID_STATE", "Audio file changed during validation; retry the import"
             )
         duration_ms = prepared["duration_ms"]
 
