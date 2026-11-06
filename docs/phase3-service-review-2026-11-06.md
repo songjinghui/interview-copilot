@@ -1,6 +1,6 @@
 # 第 3 段服务层切片独立审查
 
-> 最新复审：`790da15fa25394c42d47f6b7c58d28cba2140cb8` 仍为 **changes_requested**；A1–A3 已关闭，剩余 A4-R1 文件身份竞态。详见文末复审段，以下初审事实保留。
+> 最新复审：`bfa892a6ee013c40e458514be31361722135d859` 为 **changes_requested**；A1–A3、原 A4 长写锁及 A4-R1 已关闭，剩余 A4-R2：等待数据库写锁期间文件变化仍能发布。详见文末复审段，以下历史审查事实保留。
 
 日期：2026-11-06  
 审查者：砚砚 / gpt-6-astra（非作者）  
@@ -152,3 +152,53 @@ python -X utf8 docs/review-probes/phase3-recheck-790da15.py C:/Users/Administrat
 
 [砚砚/gpt-6-astra🐾]
 
+## 2026-11-06 再复审 · bfa892a
+
+**结论：changes_requested。** 绑定精确提交 `bfa892a6ee013c40e458514be31361722135d859`，分支 `fix/phase3-service-review`。本轮检查起止 HEAD 一致，作者工作区干净；送审消息称尚未推送，但本轮 `git ls-remote` 已确认远端同名分支为该提交，以实查结果为准。本轮仅审查相对 `790da15` 的 4 文件修订及相关回归，未修改产品实现。
+
+### 已关闭 A4-R1
+
+`_audio_file` 现在从实际打开句柄执行读前/读后 `fstat`，身份包含 dev/ino/size/mtime_ns/ctime_ns；完整哈希与 WAV 读取期间须保持稳定，并核对路径对应身份。preflight 沿用该已验证身份，增加 media_type 快照。Windows 路径 stat 与句柄 fstat 的 ctime 不直接混比，句柄前后仍比较 ctime。
+
+上轮 7 项独立探针全部通过，包括“校验返回后、preflight 保存身份前覆盖文件”的原 A4-R1 复现。作者新增的读取期间覆盖、preflight 后覆盖和资产元数据变化测试也通过。慢文件读取仍位于数据库写事务外，既有并发读写回归通过。
+
+### A4-R2 · P2 · 最终文件检查早于写锁等待，等待期间变化仍会被发布
+
+位置：[application.py:139–141](https://github.com/songjinghui/interview-copilot/blob/bfa892a6ee013c40e458514be31361722135d859/src/interview_copilot/application.py#L139)，关联 [workbench.py:312–338](https://github.com/songjinghui/interview-copilot/blob/bfa892a6ee013c40e458514be31361722135d859/src/interview_copilot/workbench.py#L312) 与 [workbench.py:357](https://github.com/songjinghui/interview-copilot/blob/bfa892a6ee013c40e458514be31361722135d859/src/interview_copilot/workbench.py#L357)。
+
+本次把最终路径身份检查从事务内移到了 `verify_prepared_command`，它在 `BEGIN IMMEDIATE` **之前**执行。随后申请写锁可等待最多约 5 秒。等待期间文件没有保护；取得写锁后 `_attach_audio_import` 仅复核数据库资产字段，不再检查文件。于是验证过的内容和最终发布的内容仍可能不同。
+
+新增探针不 mock 产品函数，使用两条真实 SQLite 连接与临时合成 WAV：
+
+1. 连接 A 持有 `BEGIN IMMEDIATE` 写锁；连接 B 正常执行 `AttachAudioImport`。
+2. SQLite trace 确认 B 已发起 `BEGIN IMMEDIATE`，且在 A 未释放时尚未完成；此时 B 的文件校验和最终身份检查已完成。
+3. A 仍持锁时，用普通写入把 WAV 覆盖为同长度坏字节，不伪造时间戳，不修改登记 hash。
+4. A 释放写锁，B 返回成功回执，`created=True`，创建音频与任务。文件 hash 与登记内容已不相同，“应拒绝变化”断言失败。
+5. 对照探针在同样的锁等待窗口修改 status/path/size/hash/media_type 五种数据库字段，均返回 `INVALID_STATE` 且无音频、任务或该请求回执写入，说明数据库内复核有效，缺口在文件发布边界。
+
+**修订要求：**写锁取得后、写入持久行之前复核已验证文件身份，或在校验结束至提交期间保有能防止改写/替换的文件保护。哈希/完整解码继续留在写事务外；常数级身份复核和长时间内容读取应分别处理。不能让一次可阻塞的写锁申请隔在最后复核与发布之间而不再检查。
+
+请先将本锁等待复现纳入回归，再修实现，同时保留原慢 I/O 并发读写、元数据变化、回执重放与回滚用例。此项是本轮剩余唯一阻塞发现；不重新打开已关闭项。
+
+### 本轮独立执行证据
+
+| 检查 | 结果 |
+|---|---|
+| `python -X utf8 -m unittest discover -s tests -t . -q` | 119/119 通过 |
+| `python -X utf8 -m unittest discover -s validation/tests -p 'test_*.py' -q` | 17/17 通过 |
+| 上轮独立复审入口 `phase3-recheck-790da15.py` | 7/7 通过 |
+| 新锁等待探针 `phase3-publication-bfa892a.py` | 1/2 通过；文件变化用例因目标行为失败，元数据对照 5 个子场景通过 |
+| 修订 `git diff --check` | 通过 |
+| `001_initial.sql` 相对 790da15 | 无差异 |
+
+共 136 项既有测试通过；独立审查探针合计 8/9 通过、1 项失败。未重复没有改动的前端构建、打包和真实浏览器验收。未将作者的重复 15 次运行计作本轮独立执行。
+
+复现脚本：[phase3-publication-bfa892a.py](review-probes/phase3-publication-bfa892a.py)。从主工作区运行：
+
+```powershell
+python -X utf8 docs/review-probes/phase3-publication-bfa892a.py C:/Users/Administrator/.local/share/opencode/worktree/fda5e9/phase3-interviews
+```
+
+全部探针仅使用隔离临时库和合成音频，未触及真实运行库。实际时区库、录音/ASR、提醒送达、系统唤醒及浏览器验收边界保持前文记录。下一棒交作者修复 A4-R2，回传新精确 HEAD；本结论不放行合并。
+
+[砚砚/gpt-6-astra🐾]
