@@ -3,6 +3,9 @@
 import tempfile
 import unittest
 import uuid
+from datetime import timedelta, timezone
+from unittest.mock import patch
+from zoneinfo import ZoneInfoNotFoundError
 from pathlib import Path
 from fastapi.testclient import TestClient
 from tests.test_storage import feature
@@ -34,6 +37,29 @@ class HttpTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         self.token = response.json()["token"]
         self.headers = {"Authorization": "Bearer " + self.token, "Origin": self.origin}
+        self.timezones = patch(
+            "interview_copilot.workbench.available_timezones",
+            return_value={"Asia/Shanghai", "UTC"},
+        )
+        self.timezones.start()
+        self.addCleanup(self.timezones.stop)
+        self.zone_resolver = patch(
+            "interview_copilot.workbench.ZoneInfo",
+            side_effect=self.resolve_test_zone,
+        )
+        self.zone_resolver.start()
+        self.addCleanup(self.zone_resolver.stop)
+
+    @staticmethod
+    def resolve_test_zone(name):
+        zones = {
+            "Asia/Shanghai": timezone(timedelta(hours=8)),
+            "UTC": timezone.utc,
+        }
+        try:
+            return zones[name]
+        except KeyError:
+            raise ZoneInfoNotFoundError(name) from None
 
     def command(self, name, fields, revision=None, request=None):
         return self.client.post(
@@ -119,6 +145,42 @@ class HttpTest(unittest.TestCase):
         unknown = self.command("SubmitApplication", {"secret": "private resume text"})
         self.assertEqual(unknown.status_code, 400)
         self.assertNotIn("private resume text", unknown.text)
+
+    def test_interview_commands_and_query_are_available_over_authenticated_http(self):
+        job = self.command(
+            "ImportJob",
+            {"text_fields": {"title": "开发", "company": "HTTP测试"}},
+        ).json()["data"]
+        opportunity = self.command("SaveOpportunity", {"job_id": job["id"]}).json()["data"]
+        scheduled = self.command(
+            "SaveInterview",
+            {
+                "opportunity_id": opportunity["id"],
+                "label": "一面",
+                "starts_at": "2026-11-20T10:00:00+08:00",
+                "ends_at": "2026-11-20T11:00:00+08:00",
+                "time_zone": "Asia/Shanghai",
+                "format": "online",
+                "status": "planned",
+                "reminder_offsets": [60],
+            },
+        )
+        self.assertEqual(scheduled.status_code, 200, scheduled.text)
+        identifier = scheduled.json()["data"]["id"]
+        page = self.client.get("/api/v1/interviews?status=planned", headers=self.headers)
+        self.assertEqual(page.status_code, 200, page.text)
+        self.assertEqual(page.json()["items"][0]["schedule"]["id"], identifier)
+        unknown_filter = self.client.get(
+            "/api/v1/interviews?unexpected=yes", headers=self.headers
+        )
+        self.assertEqual(unknown_filter.status_code, 422, unknown_filter.text)
+
+    def test_audio_attach_command_is_registered_at_http_boundary(self):
+        unavailable = self.command(
+            "AttachAudioImport",
+            {"interview_id": str(uuid.uuid4()), "asset_id": str(uuid.uuid4())},
+        )
+        self.assertEqual(unavailable.status_code, 404, unavailable.text)
 
     def test_complete_http_flow_restart_receipt_conflict_and_two_step_confirmation(
         self,

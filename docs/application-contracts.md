@@ -1,8 +1,8 @@
 # 应用接口与页面操作契约
 
-版本：v0.3 · 2026-11-04 · 设计已审；第 1 段领域服务、第 2 段工作台 HTTP/页面已合并并隔离验收；第 3 段面试音频待实现；宪宪 / gpt-6-astra（进度同步 2026-11-06）
+版本：v0.3 · 2026-11-04 · 设计已审；第 1 段领域服务、第 2 段工作台 HTTP/页面已合并并隔离验收；第 3 段日程/提醒及已登记 WAV 资产自动建转写任务的服务层在独立工作区实现与测试中；上传、真实 ASR、录音采集与恢复待实现；宪宪 / gpt-6-astra（进度同步 2026-11-06）
 
-本文件是前端与 Python 后台共同遵守的设计契约；第 1、2 段已实现其工作台范围内的领域调用和 HTTP 端点，完整契约中的上传、面试、音频及后续能力仍待实现。实体列见 [schema.sql](schema.sql)，页面见[前端设计](frontend-design.md)。领域服务不依赖 HTTP；HTTP 只是本机传输。合并后证据见[第 2 段隔离验收](workbench-acceptance-2026-11-06.md)。
+本文件是前端与 Python 后台共同遵守的设计契约；第 1、2 段已实现其工作台范围内的领域调用和 HTTP 端点。第 3 段当前工作区新增日程/提醒持久化命令及查询，并可将已登记、校验通过的本机 WAV 资产事务性关联到面试并自动建立转写任务，尚未合并。该切片没有上传端点；任务因本机尚无转写模型/worker 而明确停在 `needs_attention`，不能称为已自动转写。真实提醒送达、录音、上传与其它格式导入、ASR、后台执行和重启恢复仍待实现和验收。当前 Windows 执行环境没有 IANA 时区数据库，日程命令会以 `TIMEZONE_DATA_UNAVAILABLE` 明确失败，不会仅凭名称格式放行；提供/部署时区数据的方案仍待确定，本切片未引入新依赖。时间戳按 UTC 绝对时刻保存，`time_zone` 是展示元数据，两者不要求输入字符串的 offset 相同。实体列见 [schema.sql](schema.sql)，页面见[前端设计](frontend-design.md)。领域服务不依赖 HTTP；HTTP 只是本机传输。合并后证据见[第 2 段隔离验收](workbench-acceptance-2026-11-06.md)。
 
 ## 1. 本机通信与请求通则
 
@@ -89,7 +89,7 @@ POST /api/v1/commands
 | SaveInterviewContext | `interview_id,parent_version_id?,job_title,job_version_id?,resume_version_id?` → context version | 从关联申请默认选择；missing 自动计算；新版本不改旧报告 |
 | StartRecording | `interview_id,device_ids,consent:true` → recording | 用户主动；设备测试已通过；先持久 intent 后开启采集，失败明确关闭并回报 |
 | StopRecording | `audio_asset_id` → audio+task | 落盘校验、finalize+唯一转写入队；重复停止返回原结果 |
-| AttachAudioImport | `interview_id,asset_id` → audio+task | ready/可解码；保存与入队事务；原数据不上传外部 |
+| AttachAudioImport | `interview_id,asset_id` → audio+task | 目标契约：ready/可解码；保存与入队事务；原数据不上传外部。当前工作区仅服务层支持已登记 WAV 文件及自动建持久任务；没有上传端点或 ASR worker，模型未就绪时任务为 needs_attention |
 | SaveTranscript | `interview_id,parent_version_id?,audio_asset_id?,origin:manual/correction,segments` → transcript version | 每段 key 唯一；音频属于本场；手工无时间戳；组合校对继承逐段来源；全量新修订 |
 | CombineTranscripts | `interview_id,ordered_segments:[{version_id,segment_key}]` → transcript version | 同一场面试、逐段复制音频ID/原始时间/来源，ordinal 是阅读顺序，生成 combined 版本 |
 | RetranscribeAudio | `audio_asset_id,config_hash` → 新 task | 用户明确要求；同配置 request_generation+1；同 request_id 重试只建一次；保留旧结果 |
