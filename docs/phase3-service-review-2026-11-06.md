@@ -1,6 +1,6 @@
 # 第 3 段服务层切片独立审查
 
-> 最新复审：`bfa892a6ee013c40e458514be31361722135d859` 为 **changes_requested**；A1–A3、原 A4 长写锁及 A4-R1 已关闭，剩余 A4-R2：等待数据库写锁期间文件变化仍能发布。详见文末复审段，以下历史审查事实保留。
+> 最新复审：`e7af4f824f5df01c2c279edc6e58288c87efbb60` 为 **approved**；A1–A4、A4-R1、A4-R2 全部关闭，放行本服务层切片进入合并门禁与隔离验收。详见文末复审段，以下历史审查事实保留，不代表旧问题仍未修复。
 
 日期：2026-11-06  
 审查者：砚砚 / gpt-6-astra（非作者）  
@@ -200,5 +200,30 @@ python -X utf8 docs/review-probes/phase3-publication-bfa892a.py C:/Users/Adminis
 ```
 
 全部探针仅使用隔离临时库和合成音频，未触及真实运行库。实际时区库、录音/ASR、提醒送达、系统唤醒及浏览器验收边界保持前文记录。下一棒交作者修复 A4-R2，回传新精确 HEAD；本结论不放行合并。
+
+[砚砚/gpt-6-astra🐾]
+
+## 2026-11-06 最终复审 · e7af4f8
+
+**结论：approved。** 绑定精确提交 `e7af4f824f5df01c2c279edc6e58288c87efbb60`（`fix/phase3-service-review`）。本地与远端分支 HEAD 一致，检查起止工作区干净。本轮核对相对 `bfa892a` 的 3 文件修订；未修改作者代码。`gh pr list` 未发现该分支 PR，因此本结论是独立代码审查记录，不是 GitHub 原生 PR approval，也不代替后续合并门禁。
+
+**关闭 A4-R2，当前无未解决的阻塞发现。** [application.py:150](https://github.com/songjinghui/interview-copilot/blob/e7af4f824f5df01c2c279edc6e58288c87efbb60/src/interview_copilot/application.py#L150) 在 `BEGIN IMMEDIATE` 成功、事务内回执检查之后，业务 handler 与 receipt 写入之前执行 `verify_prepared_command_in_transaction`。Workbench 在该 hook 中复核登记资产字段和已验证文件的路径身份；等待写锁期间发生的变化会抛错并回滚，不能沿用锁等待前的结果发布。完整哈希与 WAV 读取仍在事务外，事务内仅进行元数据身份复核。
+
+本轮独立重跑上轮失败的真实双连接探针，结果转绿：同长度坏 WAV 覆盖被拒绝；status/path/size/hash/media_type 五种变化也被拒绝；音频、部分、任务、转写任务与对应请求回执均无残留。原 7 项审查探针保持通过，包含 A1–A3、慢 I/O 查询、原文件身份窗口以及成功回执不重读缺失文件的回放。作者已将锁等待用例纳入常规测试。
+
+| 本轮实际执行 | 结果 |
+|---|---|
+| `python -X utf8 -m unittest discover -s tests -t . -q` | 121/121 通过 |
+| `python -X utf8 -m unittest discover -s validation/tests -p 'test_*.py' -q` | 17/17 通过 |
+| `docs/review-probes/phase3-recheck-790da15.py`，指定 feature checkout | 7/7 通过 |
+| `docs/review-probes/phase3-publication-bfa892a.py`，指定 feature checkout | 2/2 通过 |
+| `git diff --check bfa892a e7af4f8` | 通过 |
+| 初始 SQL 迁移相对 bfa892a | 无变化 |
+
+合计 **138 项现有测试 + 9 项独立审查探针通过**。所有行为验证均使用临时数据库与合成音频，未触及真实运行数据。没有因本次小幅修订重复前端、打包或硬件验证，也未把这些未执行检查写成通过。
+
+**放行范围：**本次日程/提醒记录及已登记 WAV 关联、持久任务创建的服务层切片，可由作者继续 PR/合并门禁，随后在隔离验收环境验证合并结果。A1–A4 与后续 A4-R1/R2 均已关闭。真实上传/正式资产导入、录音、ASR worker、提醒送达和自动恢复不因本次通过而视为完成；本机缺时区数据时仍按既定契约显式返回 `TIMEZONE_DATA_UNAVAILABLE`。本结论不等于第 3 段完整产品验收。
+
+下一棒：作者按已批准精确 HEAD 继续合并流程与隔离验收；有行为变化须给新 HEAD 说明审查增量。本报告保留所有初审与复审事实。
 
 [砚砚/gpt-6-astra🐾]
