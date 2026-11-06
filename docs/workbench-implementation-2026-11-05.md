@@ -2,12 +2,12 @@
 
 2026-11-05 · 宪宪 / gpt-6-astra
 
-状态：作者实现与隔离验证完成，**等待独立代码审查，尚未合并**。本记录不代表浏览器视觉验收或首版完成。
+送审时状态：作者实现与隔离验证完成，等待独立代码审查、尚未合并。本段随后经修订复审、PR #2 合并，并完成合并后隔离验收；进度更正见 [第 2 段隔离验收](workbench-acceptance-2026-11-06.md)。本记录保留送审时证据，不代表浏览器视觉验收或首版完成。
 
 - 依据：`application-contracts.md` §6 第 2 段；愿景核对记录 `8d98cc4` 保留放行结论。
 - 分支 / 工作区：`feat/workbench` / `C:/Users/Administrator/projects/interview-copilot-workbench`。
 - 精确送审 HEAD：`c25e48d76ddb60d0508720ef0c53111ad516acd0`。
-- PR：[本机求职工作台与鉴权 API #2](https://github.com/songjinghui/interview-copilot/pull/2)，Draft。
+- PR：[本机求职工作台与鉴权 API #2](https://github.com/songjinghui/interview-copilot/pull/2)，送审时 Draft；后续已合并。
 - [该提交运行说明](https://github.com/songjinghui/interview-copilot/blob/c25e48d76ddb60d0508720ef0c53111ad516acd0/docs/workbench-runtime.md)与 README 已在 feature 分支落盘；main 本轮只登记本证据文件。
 
 ## 本段行为

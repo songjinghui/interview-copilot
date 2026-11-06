@@ -2,7 +2,7 @@
 
 把求职目标、真实经历、岗位原文和实际进度保存在本机，按固定版本核对材料，再由自己完成投递。
 
-本分支提供第 2 段工作台：目标与资料、手工导入岗位、机会管理、简单确认、人工结果记录。整体产品范围以 [VISION.md](VISION.md) 为准；录音、转写、复盘、真实来源接入和备份恢复仍按后续分段实现。
+本仓库已交付第 2 段工作台：目标与资料、手工导入岗位、机会管理、简单确认、人工结果记录。整体产品范围以 [VISION.md](VISION.md) 为准；真实浏览器视觉/焦点/缩放验收、面试录音、转写、复盘、真实来源接入和备份恢复仍按后续分段实现。
 
 ## 本机运行
 
@@ -51,4 +51,4 @@ python -X utf8 scripts/verify_workbench_runtime.py
 
 最后一条命令在临时目录制作 wheel、安装、启动独立服务，并验证崩溃重启后的会话与幂等回执，随后清理临时数据。测试不读取用户工作目录下的数据。
 
-[架构](docs/architecture.md) · [前端设计](docs/frontend-design.md) · [数据库设计](docs/database-design.md) · [接口契约](docs/application-contracts.md) · [工作台运行说明](docs/workbench-runtime.md)
+[架构](docs/architecture.md) · [第 2 段合并后隔离验收](docs/workbench-acceptance-2026-11-06.md) · [前端设计](docs/frontend-design.md) · [数据库设计](docs/database-design.md) · [接口契约](docs/application-contracts.md) · [工作台运行说明](docs/workbench-runtime.md)
