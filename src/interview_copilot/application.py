@@ -123,6 +123,21 @@ class ApplicationService:
                     "expected_revision": expected_revision,
                 }
             )
+            # Fast-path durable replays before expensive preflight work (e.g.
+            # hashing a large audio file). The receipt is checked again inside
+            # the write transaction to close races with concurrent requests.
+            prior = self.connection.execute(
+                "SELECT * FROM command_receipts WHERE request_id=?", (request_id,)
+            ).fetchone()
+            if prior is not None:
+                if prior["request_hash"] != fingerprint:
+                    raise ApplicationError(
+                        "REQUEST_ID_REUSED",
+                        "This request ID belongs to different input",
+                    )
+                return json.loads(prior["response_json"])
+            prepared = self.prepare_command(command, payload)
+            self.verify_prepared_command(command, payload, prepared)
             with self.database.transaction():
                 prior = self.connection.execute(
                     "SELECT * FROM command_receipts WHERE request_id=?", (request_id,)
@@ -134,10 +149,12 @@ class ApplicationService:
                             "This request ID belongs to different input",
                         )
                     return json.loads(prior["response_json"])
-                result = {
-                    "data": handler(payload, expected_revision),
-                    "request_id": request_id,
-                }
+                self.verify_prepared_command_in_transaction(command, payload, prepared)
+                if prepared is None:
+                    data = handler(payload, expected_revision)
+                else:
+                    data = handler(payload, expected_revision, prepared)
+                result = {"data": data, "request_id": request_id}
                 self._insert(
                     "command_receipts",
                     request_id=request_id,
@@ -166,6 +183,18 @@ class ApplicationService:
             ) from None
         except (ValueError, TypeError, KeyError, AttributeError):
             raise ApplicationError("VALIDATION", "Invalid command input") from None
+
+    def prepare_command(self, command, payload):
+        """Perform slow, side-effect-free command validation before the write lock."""
+        return None
+
+    def verify_prepared_command(self, command, payload, prepared):
+        """Recheck external identities immediately before acquiring the write lock."""
+        return None
+
+    def verify_prepared_command_in_transaction(self, command, payload, prepared):
+        """Recheck identities after acquiring the write lock, before durable writes."""
+        return None
 
     def _insert(self, table, **fields):
         # Table and column names come exclusively from the explicit methods below.

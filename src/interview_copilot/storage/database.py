@@ -107,37 +107,45 @@ class Database:
             self.connection.execute("PRAGMA foreign_keys=ON")
             self.connection.execute("PRAGMA busy_timeout=5000")
             checksum = hashlib.sha256(initial_schema().encode("utf-8")).hexdigest()
-            with self.transaction():
-                objects = schema_signature(self.connection)
-                if not objects:
-                    for statement in statements(initial_schema()):
-                        self.connection.execute(statement)
-                    self.connection.execute(
-                        "INSERT INTO schema_migrations VALUES(1,?,?)",
-                        (checksum, utc_now()),
-                    )
-                    self.connection.execute("PRAGMA user_version=1")
-                else:
-                    if objects != approved_signature():
-                        raise SchemaError(
-                            "Unknown or legacy schema; use explicit isolated legacy migration"
+            objects = schema_signature(self.connection)
+            if not objects:
+                with self.transaction():
+                    # Recheck after acquiring the initialization lock; another
+                    # process may have initialized the same new file first.
+                    objects = schema_signature(self.connection)
+                    if not objects:
+                        for statement in statements(initial_schema()):
+                            self.connection.execute(statement)
+                        self.connection.execute(
+                            "INSERT INTO schema_migrations VALUES(1,?,?)",
+                            (checksum, utc_now()),
                         )
-                    rows = self.connection.execute(
-                        "SELECT version,checksum FROM schema_migrations ORDER BY version"
-                    ).fetchall()
-                    if [tuple(r) for r in rows] != [(1, checksum)]:
-                        raise SchemaError("Unsupported migration version or checksum")
-                    if (
-                        self.connection.execute("PRAGMA user_version").fetchone()[0]
-                        != 1
-                    ):
-                        raise SchemaError("Unsupported schema version")
-            if self.path != ":memory:":
+                        self.connection.execute("PRAGMA user_version=1")
+                    else:
+                        self._validate_existing(objects, checksum)
+            else:
+                self._validate_existing(objects, checksum)
+            if self.path != ":memory:" and self.connection.execute(
+                "PRAGMA journal_mode"
+            ).fetchone()[0].lower() != "wal":
                 self.connection.execute("PRAGMA journal_mode=WAL")
             self.connection.execute("PRAGMA synchronous=FULL")
         except BaseException:
             self.close()
             raise
+
+    def _validate_existing(self, objects, checksum):
+        if objects != approved_signature():
+            raise SchemaError(
+                "Unknown or legacy schema; use explicit isolated legacy migration"
+            )
+        rows = self.connection.execute(
+            "SELECT version,checksum FROM schema_migrations ORDER BY version"
+        ).fetchall()
+        if [tuple(row) for row in rows] != [(1, checksum)]:
+            raise SchemaError("Unsupported migration version or checksum")
+        if self.connection.execute("PRAGMA user_version").fetchone()[0] != 1:
+            raise SchemaError("Unsupported schema version")
 
     @contextmanager
     def transaction(self):
