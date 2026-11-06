@@ -267,6 +267,90 @@ class Phase3ServiceReviewRegressionTest(unittest.TestCase):
             self.db.connection.execute("SELECT count(*) FROM audio_assets").fetchone()[0], 0
         )
 
+    def _attach_while_write_lock_is_held(self, interview_id, asset_id, mutate):
+        request_id = str(uuid.uuid4())
+        begin_attempted, done = threading.Event(), threading.Event()
+        outcome = {}
+
+        def attach():
+            try:
+                with Database(self.database_path) as database:
+                    database.connection.set_trace_callback(
+                        lambda statement: begin_attempted.set()
+                        if statement.strip().upper() == "BEGIN IMMEDIATE"
+                        else None
+                    )
+                    outcome["result"] = WorkbenchService(database).execute(
+                        request_id,
+                        "AttachAudioImport",
+                        {"interview_id": interview_id, "asset_id": asset_id},
+                    )
+            except BaseException as error:
+                outcome["error"] = error
+            finally:
+                done.set()
+
+        blocker = self.db.connection
+        blocker.execute("BEGIN IMMEDIATE")
+        worker = threading.Thread(target=attach)
+        worker.start()
+        try:
+            self.assertTrue(begin_attempted.wait(3), f"No BEGIN attempt: {outcome}")
+            self.assertFalse(done.wait(0.05), "Expected writer to wait for the lock")
+            mutate()
+            blocker.commit()
+        finally:
+            if blocker.in_transaction:
+                blocker.rollback()
+            worker.join(6)
+        self.assertFalse(worker.is_alive(), "Import worker did not finish")
+        return request_id, outcome
+
+    def assert_no_published_audio(self, request_id):
+        for table in ("audio_assets", "audio_parts", "background_tasks", "transcription_jobs"):
+            self.assertEqual(
+                self.db.connection.execute(f"SELECT count(*) FROM {table}").fetchone()[0],
+                0,
+                table,
+            )
+        self.assertIsNone(
+            self.db.connection.execute(
+                "SELECT 1 FROM command_receipts WHERE request_id=?", (request_id,)
+            ).fetchone()
+        )
+
+    def test_file_changed_while_waiting_for_write_lock_is_not_published(self):
+        interview = self.interview()
+        asset_id, path, payload = self._registered_audio_asset()
+        request_id, outcome = self._attach_while_write_lock_is_held(
+            interview["id"], asset_id, lambda: path.write_bytes(b"x" * len(payload))
+        )
+        self.assertIsInstance(outcome.get("error"), ApplicationError, outcome)
+        self.assertEqual(outcome["error"].code, "INVALID_STATE")
+        self.assert_no_published_audio(request_id)
+
+    def test_asset_metadata_changed_while_waiting_for_write_lock_is_not_published(self):
+        for field, value in (
+            ("status", "missing"),
+            ("relative_path", "audio/changed.wav"),
+            ("byte_size", 1),
+            ("sha256", "0" * 64),
+            ("media_type", "audio/mpeg"),
+        ):
+            with self.subTest(field=field):
+                interview = self.interview()
+                asset_id, _path, _payload = self._registered_audio_asset()
+                request_id, outcome = self._attach_while_write_lock_is_held(
+                    interview["id"],
+                    asset_id,
+                    lambda: self.db.connection.execute(
+                        f"UPDATE file_assets SET {field}=? WHERE id=?", (value, asset_id)
+                    ),
+                )
+                self.assertIsInstance(outcome.get("error"), ApplicationError, outcome)
+                self.assertEqual(outcome["error"].code, "INVALID_STATE")
+                self.assert_no_published_audio(request_id)
+
     def _registered_audio_asset(self):
         asset_id = str(uuid.uuid4())
         relative = f"audio/{asset_id}.wav"

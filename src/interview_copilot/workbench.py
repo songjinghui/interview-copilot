@@ -312,6 +312,18 @@ class WorkbenchService(ApplicationService):
     def verify_prepared_command(self, command, payload, prepared):
         if command != "AttachAudioImport":
             return
+        self._verify_audio_prepared(payload, prepared)
+
+    def verify_prepared_command_in_transaction(self, command, payload, prepared):
+        if command != "AttachAudioImport":
+            return
+        # BEGIN IMMEDIATE may wait behind another writer. Recheck after that
+        # wait has ended so a file replacement in the queue window cannot be
+        # published using the earlier preflight result. Hash/decode stay out
+        # of the transaction; this is only a bounded metadata identity check.
+        self._verify_audio_prepared(payload, prepared)
+
+    def _verify_audio_prepared(self, payload, prepared):
         asset = self._row("file_assets", payload["asset_id"])
         if (
             prepared["asset_id"] != asset["id"]

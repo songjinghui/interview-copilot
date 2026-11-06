@@ -149,6 +149,7 @@ class ApplicationService:
                             "This request ID belongs to different input",
                         )
                     return json.loads(prior["response_json"])
+                self.verify_prepared_command_in_transaction(command, payload, prepared)
                 if prepared is None:
                     data = handler(payload, expected_revision)
                 else:
@@ -189,6 +190,10 @@ class ApplicationService:
 
     def verify_prepared_command(self, command, payload, prepared):
         """Recheck external identities immediately before acquiring the write lock."""
+        return None
+
+    def verify_prepared_command_in_transaction(self, command, payload, prepared):
+        """Recheck identities after acquiring the write lock, before durable writes."""
         return None
 
     def _insert(self, table, **fields):
